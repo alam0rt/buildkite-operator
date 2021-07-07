@@ -1,0 +1,16 @@
+domain: buildkite.alam0rt.io
+layout:
+- go.kubebuilder.io/v3
+projectName: buildkite-operator
+repo: github.com/alam0rt/buildkite-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: buildkite.alam0rt.io
+  group: pipeline
+  kind: Pipeline
+  path: github.com/alam0rt/buildkite-operator/api/v1alpha1
+  version: v1alpha1
+version: "3"
