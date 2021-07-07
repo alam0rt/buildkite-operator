@@ -25,18 +25,66 @@ import (
 
 // PipelineSpec defines the desired state of Pipeline
 type PipelineSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Steps for the pipeline to take
+	// https://buildkite.com/docs/pipelines/defining-steps#step-defaults
+	Steps []Step `json:"step"`
+}
 
-	// Foo is an example field of Pipeline. Edit pipeline_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+// Step represents a build step in buildkites build pipeline
+type Step struct {
+	Type                *string           `json:"type,omitempty"`
+	Name                *string           `json:"name,omitempty"`
+	Command             *string           `json:"command,omitempty"`
+	ArtifactPaths       *string           `json:"artifact_paths,omitempty"`
+	BranchConfiguration *string           `json:"branch_configuration,omitempty"`
+	Env                 map[string]string `json:"env,omitempty"`
+	TimeoutInMinutes    *int              `json:"timeout_in_minutes,omitempty"`
+	AgentQueryRules     []string          `json:"agent_query_rules,omitempty"`
 }
 
 // PipelineStatus defines the observed state of Pipeline
 type PipelineStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Last observed state of the build job
+	BuildState BuildState `json:"build"`
 }
+
+// BuildState describes the state of the overall pipeline.
+// https://buildkite.com/docs/pipelines/defining-steps#build-states
+// +kubebuilder:validation:Enum=Scheduled;Running;Passed;Failed;Blocked;Canceling;Canceled;Skipped;NotRun;Finished
+type BuildState string
+
+const (
+	// ScheduledBuildState indicates a build has been scheduled by Buildkite
+	ScheduledBuildState BuildState = "Scheduled"
+
+	// RunningBuildState means the build is running on an agent
+	RunningBuildState BuildState = "Running"
+
+	// PassedBuildState states that a build has successfully completed running
+	PassedBuildState BuildState = "Passed"
+
+	// FailedBuildState indicates the build has exited on a non-zero value
+	FailedBuildState BuildState = "Failed"
+
+	// BlockedBuildState means the build is waiting for manual interventing to be unblocked
+	BlockedBuildState BuildState = "Blocked"
+
+	// CancelingBuildState indicates a build has been instructed to cancel and is doing so
+	CancelingBuildState BuildState = "Canceling"
+
+	// CanceledBuildState means the build has successfully canceled
+	CanceledBuildState BuildState = "Canceled"
+
+	// SkippedBuildState means the build has skipped due to some logic in the pipeline
+	SkippedBuildState BuildState = "Skipped"
+
+	// NotRunBuildState indicates the build has not run and will not be re-run
+	NotRunBuildState BuildState = "NotRun"
+
+	// FinishedBuildState means the build has passed and is an alias for `passed`,
+	// `failed`, `blocked` and `cancelled`.
+	FinishedBuildState BuildState = "Finished"
+)
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

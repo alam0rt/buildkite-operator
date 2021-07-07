@@ -1,0 +1,42 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - default
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - pipeline.buildkite.alam0rt.io
+  resources:
+  - pipelines
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - pipeline.buildkite.alam0rt.io
+  resources:
+  - pipelines/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - pipeline.buildkite.alam0rt.io
+  resources:
+  - pipelines/status
+  verbs:
+  - get
+  - patch
+  - update
