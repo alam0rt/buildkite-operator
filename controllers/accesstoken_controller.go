@@ -38,6 +38,7 @@ type AccessTokenReconciler struct {
 //+kubebuilder:rbac:groups=pipeline.buildkite.alam0rt.io,resources=accesstokens,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=pipeline.buildkite.alam0rt.io,resources=accesstokens/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=pipeline.buildkite.alam0rt.io,resources=accesstokens/finalizers,verbs=update
+//+kubebuilder:rbac:groups=default,resources=secrets,verbs=get;watch;list
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

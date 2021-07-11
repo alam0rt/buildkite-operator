@@ -38,7 +38,7 @@ type AccessTokenSpec struct {
 
 	// SecretRef takes  a secret name and uses the `token` key to authenticate
 	// all requests.
-	SecretRef string `json:"secret_ref"`
+	SecretRef string `json:"secretRef"`
 }
 
 // AccessTokenStatus defines the observed state of AccessToken

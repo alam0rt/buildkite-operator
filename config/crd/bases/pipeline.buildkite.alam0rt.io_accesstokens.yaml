@@ -36,14 +36,12 @@ spec:
           spec:
             description: AccessTokenSpec defines the desired state of AccessToken
             properties:
-              description:
-                description: Foo is an example field of AccessToken. Edit accesstoken_types.go
-                  to remove/update
-                type: string
-              secret_ref:
+              secretRef:
+                description: SecretRef takes  a secret name and uses the `token` key
+                  to authenticate all requests.
                 type: string
             required:
-            - secret_ref
+            - secretRef
             type: object
           status:
             description: AccessTokenStatus defines the observed state of AccessToken
