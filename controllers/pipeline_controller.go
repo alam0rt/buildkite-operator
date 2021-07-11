@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	pipelinev1alpha1 "github.com/alam0rt/buildkite-operator/api/v1alpha1"
-	"github.com/buildkite/go-buildkite/v2/buildkite"
+	"github.com/alam0rt/go-buildkite/v2/buildkite"
 )
 
 // PipelineReconciler reconciles a Pipeline object

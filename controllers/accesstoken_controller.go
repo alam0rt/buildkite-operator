@@ -19,12 +19,14 @@ package controllers
 import (
 	"context"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	pipelinev1alpha1 "github.com/alam0rt/buildkite-operator/api/v1alpha1"
+	"github.com/alam0rt/go-buildkite/v2/buildkite"
 )
 
 // AccessTokenReconciler reconciles a AccessToken object
@@ -47,9 +49,40 @@ type AccessTokenReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *AccessTokenReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
 
-	// your logic here
+	_ = log.FromContext(ctx)
+	var accessToken pipelinev1alpha1.AccessToken
+	if err := r.Get(ctx, req.NamespacedName, &accessToken); err != nil {
+		log.Log.Error(err, "unable to fetch AccessToken")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	var tokenSecret corev1.Secret
+	if err := r.Get(
+		ctx,
+		client.ObjectKey{
+			Name:      accessToken.Spec.SecretRef,
+			Namespace: req.Namespace,
+		},
+		&tokenSecret); err != nil {
+		log.Log.Error(err, "unable to get secret")
+		return ctrl.Result{}, err
+	}
+	apiToken := tokenSecret.StringData["token"]
+
+	config, err := buildkite.NewTokenConfig(apiToken, false)
+	if err != nil {
+		log.Log.Error(err, "unable to authenticate to buildkite using supplied token")
+		// this error is bad and thus we exit
+		return ctrl.Result{}, err
+	}
+
+	client := buildkite.NewClient(config.Client())
+
+	orgs, _, err := client.Organizations.Get("none-63")
+	log.Log.Info(orgs.CreatedAt.String())
+
+	log.Log.Info("blah")
 
 	return ctrl.Result{}, nil
 }
