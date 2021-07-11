@@ -17,6 +17,32 @@ rules:
 - apiGroups:
   - pipeline.buildkite.alam0rt.io
   resources:
+  - organizations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - pipeline.buildkite.alam0rt.io
+  resources:
+  - organizations/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - pipeline.buildkite.alam0rt.io
+  resources:
+  - organizations/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - pipeline.buildkite.alam0rt.io
+  resources:
   - pipelines
   verbs:
   - create

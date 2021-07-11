@@ -1,7 +1,7 @@
 apiVersion: pipeline.buildkite.alam0rt.io/v1alpha1
 kind: Organization
 metadata:
-  name: organization-sample
+  name: wowser
+  namespace: default
 spec:
-  # Add fields here
-  foo: bar
+  slug: none-63

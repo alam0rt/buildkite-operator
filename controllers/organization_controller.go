@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	pipelinev1alpha1 "github.com/alam0rt/buildkite-operator/api/v1alpha1"
+	"github.com/buildkite/go-buildkite/v2/buildkite"
 )
 
 // OrganizationReconciler reconciles a Organization object
@@ -48,8 +49,49 @@ type OrganizationReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
+	var organization pipelinev1alpha1.Organization
+	if err := r.Get(ctx, req.NamespacedName, &organization); err != nil {
+		log.Log.Error(err, "unable to fetch Organization")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
 
-	// your logic here
+	var token string
+	token = *organization.Spec.Token
+
+	config, err := buildkite.NewTokenConfig(token, false)
+	if err != nil {
+		log.Log.Error(err, "unable to authenticate to buildkite using supplied token")
+		return ctrl.Result{}, err
+	}
+
+	log.Log.Info("loaded Organization")
+
+	client := buildkite.NewClient(config.Client())
+
+	var slug string
+	slug = *organization.Spec.Slug
+
+	remoteOrganization, _, err := client.Organizations.Get(slug)
+	if err != nil {
+		log.Log.Error(err, "unable to fetch remote organization using Buildkite's API")
+		return ctrl.Result{}, err
+	}
+
+	// update the status of the resource
+	organization.Status.Name = remoteOrganization.Name
+	organization.Status.ID = remoteOrganization.ID
+	organization.Status.URL = remoteOrganization.URL
+	organization.Status.AgentsURL = remoteOrganization.AgentsURL
+	organization.Status.WebURL = remoteOrganization.WebURL
+
+	var time string
+	time = remoteOrganization.CreatedAt.Time.String()
+	organization.Status.CreatedAt = &time
+
+	if err := r.Status().Update(ctx, &organization); err != nil {
+		log.Log.Error(err, "unable to update Organization status")
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }

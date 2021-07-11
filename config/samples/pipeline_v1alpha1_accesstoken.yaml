@@ -1,0 +1,7 @@
+apiVersion: pipeline.buildkite.alam0rt.io/v1alpha1
+kind: AccessToken
+metadata:
+  name: accesstoken-sample
+spec:
+  # Add fields here
+  foo: bar

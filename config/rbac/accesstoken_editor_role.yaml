@@ -1,0 +1,24 @@
+# permissions for end users to edit accesstokens.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: accesstoken-editor-role
+rules:
+- apiGroups:
+  - pipeline.buildkite.alam0rt.io
+  resources:
+  - accesstokens
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - pipeline.buildkite.alam0rt.io
+  resources:
+  - accesstokens/status
+  verbs:
+  - get

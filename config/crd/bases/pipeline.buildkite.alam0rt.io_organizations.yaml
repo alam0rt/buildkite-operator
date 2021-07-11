@@ -1,0 +1,78 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.1
+  creationTimestamp: null
+  name: organizations.pipeline.buildkite.alam0rt.io
+spec:
+  group: pipeline.buildkite.alam0rt.io
+  names:
+    kind: Organization
+    listKind: OrganizationList
+    plural: organizations
+    singular: organization
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Organization is the Schema for the organizations API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: OrganizationSpec defines the desired state of Organization
+            properties:
+              slug:
+                type: string
+              token:
+                type: string
+            required:
+            - token
+            type: object
+          status:
+            description: OrganizationStatus defines the observed state of Organization
+            properties:
+              agents_url:
+                type: string
+              created_at:
+                type: string
+              id:
+                description: ID is a UUID
+                type: string
+              name:
+                description: Name is the human friendly representation of the organization
+                type: string
+              pipelines_url:
+                type: string
+              repository:
+                type: string
+              url:
+                type: string
+              web_url:
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

@@ -25,17 +25,24 @@ import (
 
 // OrganizationSpec defines the desired state of Organization
 type OrganizationSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of Organization. Edit organization_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Slug  *string `json:"slug,omitempty"`
+	Token *string `json:"token"`
 }
 
 // OrganizationStatus defines the observed state of Organization
 type OrganizationStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Name is the human friendly representation of the organization
+	Name *string `json:"name,omitempty"`
+
+	Repository   *string `json:"repository,omitempty"`
+	PipelinesURL *string `json:"pipelines_url,omitempty"`
+	AgentsURL    *string `json:"agents_url,omitempty"`
+
+	// ID is a UUID
+	ID        *string `json:"id,omitempty"`
+	URL       *string `json:"url,omitempty"`
+	WebURL    *string `json:"web_url,omitempty"`
+	CreatedAt *string `json:"created_at,omitempty"`
 }
 
 //+kubebuilder:object:root=true
