@@ -13,4 +13,13 @@ resources:
   kind: Pipeline
   path: github.com/alam0rt/buildkite-operator/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: buildkite.alam0rt.io
+  group: pipeline
+  kind: Organization
+  path: github.com/alam0rt/buildkite-operator/api/v1alpha1
+  version: v1alpha1
 version: "3"

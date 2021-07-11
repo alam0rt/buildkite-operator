@@ -1,0 +1,7 @@
+apiVersion: pipeline.buildkite.alam0rt.io/v1alpha1
+kind: Organization
+metadata:
+  name: organization-sample
+spec:
+  # Add fields here
+  foo: bar
