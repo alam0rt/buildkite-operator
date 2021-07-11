@@ -68,9 +68,9 @@ func (r *AccessTokenReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		log.Log.Error(err, "unable to get secret")
 		return ctrl.Result{}, err
 	}
-	apiToken := tokenSecret.StringData["token"]
+	apiKey := tokenSecret.StringData["token"]
 
-	config, err := buildkite.NewTokenConfig(apiToken, false)
+	config, err := buildkite.NewTokenConfig(apiKey, false)
 	if err != nil {
 		log.Log.Error(err, "unable to authenticate to buildkite using supplied token")
 		// this error is bad and thus we exit
@@ -79,10 +79,14 @@ func (r *AccessTokenReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	client := buildkite.NewClient(config.Client())
 
-	orgs, _, err := client.Organizations.Get("none-63")
-	log.Log.Info(orgs.CreatedAt.String())
-
-	log.Log.Info("blah")
+	var token *buildkite.AccessToken
+	token, _, err = client.GetToken()
+	if err != nil {
+		log.Log.Error(err, "there was a problem getting the current access token")
+		// this error is bad and thus we exit
+		return ctrl.Result{}, err
+	}
+	log.Log.Info(*token.UUID)
 
 	return ctrl.Result{}, nil
 }

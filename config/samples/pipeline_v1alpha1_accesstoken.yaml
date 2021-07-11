@@ -3,5 +3,4 @@ kind: AccessToken
 metadata:
   name: accesstoken-sample
 spec:
-  # Add fields here
-  foo: bar
+  secretRef: "token"

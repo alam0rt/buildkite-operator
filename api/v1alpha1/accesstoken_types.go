@@ -36,9 +36,9 @@ type AccessTokenSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of AccessToken. Edit accesstoken_types.go to remove/update
-	Description string `json:"description,omitempty"`
-	SecretRef   string `json:"secret_ref"`
+	// SecretRef takes  a secret name and uses the `token` key to authenticate
+	// all requests.
+	SecretRef string `json:"secret_ref"`
 }
 
 // AccessTokenStatus defines the observed state of AccessToken
