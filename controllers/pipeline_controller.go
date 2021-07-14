@@ -52,14 +52,16 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	var pipeline pipelinev1alpha1.Pipeline
 	if err := r.Get(ctx, req.NamespacedName, &pipeline); err != nil {
 		log.Log.Error(err, "unable to fetch Pipeline")
-		// we'll ignore not-found errors, since they can't be fixed by an immediate
-		// requeue (we'll need to wait for a new notification), and we can get them
-		// on deleted requests.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	var apiToken string
-	apiToken = "EXAMPLE"
+	var accessTokenResource pipelinev1alpha1.AccessToken
+	if err := r.Get(ctx, client.ObjectKey{Name: pipeline.Spec.AccessTokenRef, Namespace: req.Namespace}, &accessTokenResource); err != nil {
+		log.Log.Error(err, "unable to fetch referenced AccessToken")
+		return ctrl.Result{}, err
+	}
+
+	apiToken := accessTokenResource.Status.Token
 	config, err := buildkite.NewTokenConfig(apiToken, false)
 	if err != nil {
 		log.Log.Error(err, "unable to authenticate to buildkite using supplied token")

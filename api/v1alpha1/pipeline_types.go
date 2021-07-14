@@ -27,7 +27,8 @@ import (
 type PipelineSpec struct {
 	// Steps for the pipeline to take
 	// https://buildkite.com/docs/pipelines/defining-steps#step-defaults
-	Steps []Step `json:"step"`
+	AccessTokenRef string `json:"accessTokenRef"`
+	Steps          []Step `json:"step"`
 }
 
 // Step represents a build step in buildkites build pipeline

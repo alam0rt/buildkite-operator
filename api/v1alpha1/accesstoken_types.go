@@ -23,6 +23,7 @@ import (
 type Scope string
 
 const (
+	// TODO: implement access token API
 	ReadAgentsScope Scope = "read_agents"
 )
 
@@ -47,6 +48,9 @@ type AccessTokenStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 	UUID   string `json:"uuid,omitempty"`
 	Scopes Scopes `json:"scopes,omitempty"`
+
+	// Token is the Buildkite API token retrieved from the AccessToken resource
+	Token string `json:"token,omitempty"`
 }
 
 //+kubebuilder:object:root=true

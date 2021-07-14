@@ -3,5 +3,6 @@ kind: Pipeline
 metadata:
   name: pipeline-sample
 spec:
+  accessTokenRef: accesstoken-sample
   step:
     - command: "echo 'i don't do anything... yet'"

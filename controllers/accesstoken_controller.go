@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -38,7 +39,7 @@ type AccessTokenReconciler struct {
 //+kubebuilder:rbac:groups=pipeline.buildkite.alam0rt.io,resources=accesstokens,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=pipeline.buildkite.alam0rt.io,resources=accesstokens/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=pipeline.buildkite.alam0rt.io,resources=accesstokens/finalizers,verbs=update
-//+kubebuilder:rbac:groups=default,resources=secrets,verbs=get;watch;list
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;watch;list
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -58,18 +59,24 @@ func (r *AccessTokenReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	var tokenSecret corev1.Secret
+	tokenSecret := &corev1.Secret{}
 	if err := r.Get(
 		ctx,
 		client.ObjectKey{
 			Name:      accessToken.Spec.SecretRef,
 			Namespace: req.Namespace,
 		},
-		&tokenSecret); err != nil {
+		tokenSecret); err != nil {
 		log.Log.Error(err, "unable to get secret")
 		return ctrl.Result{}, err
 	}
-	apiKey := tokenSecret.StringData["token"]
+
+	apiKey := string(tokenSecret.Data["token"])
+	if len(apiKey) == 0 {
+		err := errors.New("supplied token is empty")
+		log.Log.Error(err, "unable to autoenticate to Buildkite")
+		return ctrl.Result{}, err
+	}
 
 	config, err := buildkite.NewTokenConfig(apiKey, false)
 	if err != nil {
@@ -78,16 +85,26 @@ func (r *AccessTokenReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, err
 	}
 
-	client := buildkite.NewClient(config.Client())
+	implemented := false
+	if implemented {
+		client := buildkite.NewClient(config.Client())
 
-	var token *buildkite.AccessToken
-	token, _, err = client.GetToken()
-	if err != nil {
-		log.Log.Error(err, "there was a problem getting the current access token")
-		// this error is bad and thus we exit
+		var token *buildkite.AccessToken
+		token, _, err = client.GetToken()
+		if err != nil {
+			log.Log.Error(err, "there was a problem getting the current access token")
+			// this error is bad and thus we exit
+			return ctrl.Result{}, err
+		}
+		log.Log.Info(*token.UUID)
+	}
+
+	accessToken.Status.Token = apiKey
+
+	if err := r.Status().Update(ctx, &accessToken); err != nil {
+		log.Log.Error(err, "unable to update AccessToken status")
 		return ctrl.Result{}, err
 	}
-	log.Log.Info(*token.UUID)
 
 	return ctrl.Result{}, nil
 }

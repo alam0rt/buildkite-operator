@@ -55,6 +55,12 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	var accessToken pipelinev1alpha1.AccessToken
+	if err := r.Get(ctx, req.NamespacedName, &accessToken); err != nil {
+		log.Log.Error(err, "unable to fetch AccessToken")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
 	var token string
 	token = *organization.Spec.Token
 

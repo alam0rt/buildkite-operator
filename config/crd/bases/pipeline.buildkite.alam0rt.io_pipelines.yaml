@@ -36,8 +36,10 @@ spec:
           spec:
             description: PipelineSpec defines the desired state of Pipeline
             properties:
-              step:
+              accessTokenRef:
                 description: Steps for the pipeline to take https://buildkite.com/docs/pipelines/defining-steps#step-defaults
+                type: string
+              step:
                 items:
                   description: Step represents a build step in buildkites build pipeline
                   properties:
@@ -64,6 +66,7 @@ spec:
                   type: object
                 type: array
             required:
+            - accessTokenRef
             - step
             type: object
           status:

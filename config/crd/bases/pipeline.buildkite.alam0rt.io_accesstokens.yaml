@@ -50,6 +50,10 @@ spec:
                 items:
                   type: string
                 type: array
+              token:
+                description: Token is the Buildkite API token retrieved from the AccessToken
+                  resource
+                type: string
               uuid:
                 description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
                   of cluster Important: Run "make" to regenerate code after modifying
