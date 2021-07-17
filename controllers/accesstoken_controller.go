@@ -102,6 +102,7 @@ func (r *AccessTokenReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	for _, scope := range *accessTokenBuildkite.Scopes {
 		accessToken.Status.Scopes = append(accessToken.Status.Scopes, v1alpha1.Scope(scope))
 	}
+
 	accessToken.Status.LastTimeAuthenticated = time.Now().String()
 
 	// rate limiting

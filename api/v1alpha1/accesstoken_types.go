@@ -90,6 +90,7 @@ type AccessTokenStatus struct {
 
 	// LastTimeAuthenticated is the time when the token was used last to successfully
 	// authenticate to the Buildkite API
+	// TOOD: use *metav1.Time instead of string
 	LastTimeAuthenticated string `json:"lastTimeAuthenticated,omitempty"`
 }
 

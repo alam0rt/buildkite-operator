@@ -18,12 +18,16 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
+	"time"
 
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/alam0rt/buildkite-operator/api/v1alpha1"
 	pipelinev1alpha1 "github.com/alam0rt/buildkite-operator/api/v1alpha1"
 	"github.com/alam0rt/go-buildkite/v2/buildkite"
 )
@@ -71,30 +75,85 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	client := buildkite.NewClient(config.Client())
 
-	pipelineSlug := pipeline.ObjectMeta.Name
 	organization := pipeline.Spec.Organization
 
-	pipelineRemote, resp, err := client.Pipelines.Get(organization, pipelineSlug)
-	if err != nil {
-		if resp.StatusCode == 404 {
-			log.Log.Error(err, "the supplied Pipeline or Organization does not exist")
-
+	// check if exists
+	var resp *buildkite.Pipeline
+	if pipeline.Spec.Slug != nil {
+		resp, _, err = client.Pipelines.Get(organization, *pipeline.Spec.Slug)
+		if err != nil {
+			log.Log.Error(err, "there was an problem when retrieving the pipeline from the Buildkite API")
+		} else {
+			// update the status
+			pipeline.Status.CreatedAt = (*v1.Time)(resp.ArchivedAt)
+			pipeline.Status.BuildState = pipelinev1alpha1.PassedBuildState
+			pipeline.Status.RunningBuildsCount = resp.RunningBuildsCount
+			pipeline.Status.ScheduledBuildsCount = resp.ScheduledBuildsCount
+			pipeline.Status.ScheduledJobsCount = resp.ScheduledJobsCount
+			pipeline.Status.RunningJobsCount = resp.RunningJobsCount
+			pipeline.Status.BuildsURL = resp.BuildsURL
+			pipeline.Status.Provider = &v1alpha1.Provider{
+				ID:         resp.Provider.ID,
+				WebhookURL: resp.Provider.WebhookURL,
+			}
 		}
-		log.Log.Error(err, "there was an unknown problem when retrieving the pipeline from the Buildkite API")
-		return ctrl.Result{}, err
+	} else {
+		// if we can't retrieve the pipeline we assume it may not exist yet
+		input := &buildkite.CreatePipeline{
+			Name:          pipeline.Spec.PipelineName,
+			Repository:    pipeline.Spec.Repository,
+			Configuration: pipeline.Spec.Configuration,
+		}
+
+		jsonInput, _ := json.Marshal(input)
+		log.Log.Info(string(jsonInput))
+
+		resp, apiResp, err := client.Pipelines.Create(organization, input)
+		if err != nil {
+			if apiResp.Response.StatusCode == 422 {
+				log.Log.Error(err, "there was an issue validating the pipeline input")
+				return ctrl.Result{}, err
+			}
+			log.Log.Error(err, "there was an unknown exception")
+		}
+
+		// this is the most important thing to set
+		pipeline.Spec.Slug = resp.Slug
+
+		// update the status
+		pipeline.Status.CreatedAt = (*v1.Time)(resp.ArchivedAt)
+		pipeline.Status.BuildState = pipelinev1alpha1.PassedBuildState
+		pipeline.Status.RunningBuildsCount = resp.RunningBuildsCount
+		pipeline.Status.ScheduledBuildsCount = resp.ScheduledBuildsCount
+		pipeline.Status.ScheduledJobsCount = resp.ScheduledJobsCount
+		pipeline.Status.RunningJobsCount = resp.RunningJobsCount
+		pipeline.Status.BuildsURL = resp.BuildsURL
+		pipeline.Status.Provider = &v1alpha1.Provider{
+			ID:         resp.Provider.ID,
+			WebhookURL: resp.Provider.WebhookURL,
+		}
+
 	}
-
-	log.Log.Info(*pipelineRemote.BuildsURL)
-
-	// try this bad boy on for size
-	pipeline.Status.BuildState = pipelinev1alpha1.PassedBuildState
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		log.Log.Error(err, "unable to update Pipeline status")
 		return ctrl.Result{}, err
 	}
 
+	time.Sleep(time.Duration(5) * time.Second)
+
 	return ctrl.Result{}, nil
+}
+
+type PipelineErrorResponse struct {
+	Message string          `json:"message"`
+	Errors  []PipelineError `json:"errors"`
+}
+
+type PipelineError struct {
+	Field string `json:"field,omitempty"`
+	Code  string `json:"code,omitemtpy"`
+	Value string `json:"value,omitempty"`
 }
 
 // SetupWithManager sets up the controller with the Manager.

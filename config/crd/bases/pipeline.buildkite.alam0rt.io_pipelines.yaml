@@ -44,46 +44,154 @@ spec:
             description: PipelineSpec defines the desired state of Pipeline
             properties:
               accessTokenRef:
-                description: Steps for the pipeline to take https://buildkite.com/docs/pipelines/defining-steps#step-defaults
+                description: Required for authentication
                 type: string
+              branch_configuration:
+                type: string
+              cancel_running_branch_builds:
+                type: boolean
+              cancel_running_branch_builds_filter:
+                type: string
+              cluster_id:
+                type: string
+              configuration:
+                description: Only support YAML pipelines https://buildkite.com/docs/apis/rest-api/pipelines#create-a-yaml-pipeline
+                type: string
+              default_branch:
+                description: Optional fields
+                type: string
+              description:
+                type: string
+              env:
+                additionalProperties:
+                  type: string
+                type: object
               organization:
                 type: string
-              step:
+              pipelineName:
+                description: Steps for the pipeline to take https://buildkite.com/docs/pipelines/defining-steps#step-defaults
+                type: string
+              provider_settings:
+                description: ProviderSettings are settings for the pipeline provider.
+                properties:
+                  bitbucket_settings:
+                    description: BitbucketSettings are settings for pipelines building
+                      from Bitbucket repositories.
+                    properties:
+                      build_pull_requests:
+                        type: boolean
+                      build_tags:
+                        type: boolean
+                      publish_commit_status:
+                        type: boolean
+                      publish_commit_status_per_step:
+                        type: boolean
+                      pull_request_branch_filter_configuration:
+                        type: string
+                      pull_request_branch_filter_enabled:
+                        type: boolean
+                      repository:
+                        description: Read-only
+                        type: string
+                      skip_pull_request_builds_for_existing_commits:
+                        type: boolean
+                    type: object
+                  github_enterprise_settings:
+                    description: GitHubEnterpriseSettings are settings for pipelines
+                      building from GitHub Enterprise repositories.
+                    properties:
+                      build_pull_requests:
+                        type: boolean
+                      build_tags:
+                        type: boolean
+                      publish_commit_status:
+                        type: boolean
+                      publish_commit_status_per_step:
+                        type: boolean
+                      pull_request_branch_filter_configuration:
+                        type: string
+                      pull_request_branch_filter_enabled:
+                        type: boolean
+                      repository:
+                        description: Read-only
+                        type: string
+                      skip_pull_request_builds_for_existing_commits:
+                        type: boolean
+                    type: object
+                  github_settings:
+                    description: GitHubSettings are settings for pipelines building
+                      from GitHub repositories.
+                    properties:
+                      build_pull_request_forks:
+                        type: boolean
+                      build_pull_requests:
+                        type: boolean
+                      build_tags:
+                        type: boolean
+                      filter_condition:
+                        type: string
+                      filter_enabled:
+                        type: boolean
+                      prefix_pull_request_fork_branch_names:
+                        type: boolean
+                      publish_blocked_as_pending:
+                        type: boolean
+                      publish_commit_status:
+                        type: boolean
+                      publish_commit_status_per_step:
+                        type: boolean
+                      pull_request_branch_filter_configuration:
+                        type: string
+                      pull_request_branch_filter_enabled:
+                        type: boolean
+                      repository:
+                        description: Read-only
+                        type: string
+                      separate_pull_request_statuses:
+                        type: boolean
+                      skip_pull_request_builds_for_existing_commits:
+                        type: boolean
+                      trigger_mode:
+                        type: string
+                    type: object
+                  gitlab_settings:
+                    description: GitLabSettings are settings for pipelines building
+                      from GitLab repositories.
+                    properties:
+                      repository:
+                        description: Read-only
+                        type: string
+                    type: object
+                type: object
+              repository:
+                type: string
+              skip_queued_branch_builds:
+                type: boolean
+              skip_queued_branch_builds_filter:
+                type: string
+              slug:
+                description: Slug is filled out after creation
+                type: string
+              team_uuids:
                 items:
-                  description: Step represents a build step in buildkites build pipeline
-                  properties:
-                    agent_query_rules:
-                      items:
-                        type: string
-                      type: array
-                    artifact_paths:
-                      type: string
-                    branch_configuration:
-                      type: string
-                    command:
-                      type: string
-                    env:
-                      additionalProperties:
-                        type: string
-                      type: object
-                    name:
-                      type: string
-                    timeout_in_minutes:
-                      type: integer
-                    type:
-                      type: string
-                  type: object
+                  type: string
                 type: array
             required:
             - accessTokenRef
             - organization
-            - step
+            - pipelineName
+            - repository
             type: object
           status:
             description: PipelineStatus defines the observed state of Pipeline
             properties:
+              archived_at:
+                format: date-time
+                type: string
+              badge_url:
+                type: string
               build:
-                description: Last observed state of the build job
+                description: build state
                 enum:
                 - Scheduled
                 - Running
@@ -95,6 +203,37 @@ spec:
                 - Skipped
                 - NotRun
                 - Finished
+                type: string
+              builds_url:
+                type: string
+              created_at:
+                format: date-time
+                type: string
+              provider:
+                description: the provider of sources
+                properties:
+                  id:
+                    type: string
+                  webhook_url:
+                    type: string
+                required:
+                - id
+                - webhook_url
+                type: object
+              running_builds_count:
+                type: integer
+              running_jobs_count:
+                type: integer
+              scheduled_builds_count:
+                type: integer
+              scheduled_jobs_count:
+                type: integer
+              url:
+                description: Last observed state of the build job
+                type: string
+              waiting_jobs_count:
+                type: integer
+              web_url:
                 type: string
             required:
             - build

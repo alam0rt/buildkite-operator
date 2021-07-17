@@ -54,8 +54,9 @@ spec:
             description: AccessTokenStatus defines the observed state of AccessToken
             properties:
               lastTimeAuthenticated:
-                description: LastTimeAuthenticated is the time when the token was
-                  used last to successfully authenticate to the Buildkite API
+                description: 'LastTimeAuthenticated is the time when the token was
+                  used last to successfully authenticate to the Buildkite API TOOD:
+                  use *metav1.Time instead of string'
                 type: string
               scopes:
                 description: Scopes are a list of the access permissions of the token
