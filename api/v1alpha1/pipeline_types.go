@@ -116,7 +116,7 @@ const (
 //+kubebuilder:printcolumn:name="State",type=string,JSONPath=`.status.build`
 //+kubebuilder:printcolumn:name="Slug",type=string,JSONPath=`.status.slug`
 //+kubebuilder:printcolumn:name="Organization",type=string,JSONPath=`.spec.organization`
-//+kubebuilder:printcolumn:name="Url",type=string,JSONPath=`.status.build_url`
+//+kubebuilder:printcolumn:name="Url",type=string,JSONPath=`.status.builds_url`
 
 // Pipeline is the Schema for the pipelines API
 type Pipeline struct {
