@@ -17,10 +17,10 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .spec.status.build
+    - jsonPath: .status.build
       name: State
       type: string
-    - jsonPath: .spec.spec.organization
+    - jsonPath: .spec.organization
       name: Organization
       type: string
     name: v1alpha1
@@ -169,9 +169,6 @@ spec:
                 type: boolean
               skip_queued_branch_builds_filter:
                 type: string
-              slug:
-                description: Slug is filled out after creation
-                type: string
               team_uuids:
                 items:
                   type: string
@@ -228,8 +225,10 @@ spec:
                 type: integer
               scheduled_jobs_count:
                 type: integer
-              url:
+              slug:
                 description: Last observed state of the build job
+                type: string
+              url:
                 type: string
               waiting_jobs_count:
                 type: integer

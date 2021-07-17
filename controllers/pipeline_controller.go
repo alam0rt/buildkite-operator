@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"time"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,6 +37,13 @@ import (
 type PipelineReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+}
+
+func nameToSlug(s string) string {
+	s = strings.ToLower(s)
+	split := strings.Split(s, " ")
+	slug := strings.Join(split, "-")
+	return slug
 }
 
 //+kubebuilder:rbac:groups=pipeline.buildkite.alam0rt.io,resources=pipelines,verbs=get;list;watch;create;update;patch;delete
@@ -79,11 +87,16 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	// check if exists
 	var resp *buildkite.Pipeline
-	if pipeline.Spec.Slug != nil {
-		resp, _, err = client.Pipelines.Get(organization, *pipeline.Spec.Slug)
+	if pipeline.Status.Slug != nil {
+		guessSlug := nameToSlug(pipeline.ObjectMeta.Name)
+		resp, _, err = client.Pipelines.Get(organization, guessSlug)
 		if err != nil {
 			log.Log.Error(err, "there was an problem when retrieving the pipeline from the Buildkite API")
 		} else {
+
+			// this is the most important thing to set
+			pipeline.Status.Slug = resp.Slug
+
 			// update the status
 			pipeline.Status.CreatedAt = (*v1.Time)(resp.ArchivedAt)
 			pipeline.Status.BuildState = pipelinev1alpha1.PassedBuildState
@@ -118,7 +131,7 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 
 		// this is the most important thing to set
-		pipeline.Spec.Slug = resp.Slug
+		pipeline.Status.Slug = resp.Slug
 
 		// update the status
 		pipeline.Status.CreatedAt = (*v1.Time)(resp.ArchivedAt)

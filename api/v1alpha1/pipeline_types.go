@@ -35,9 +35,6 @@ type PipelineSpec struct {
 	// https://buildkite.com/docs/apis/rest-api/pipelines#create-a-yaml-pipeline
 	Configuration string `json:"configuration,omitempty"`
 
-	// Slug is filled out after creation
-	Slug *string `json:"slug,omitempty"`
-
 	// Optional fields
 	DefaultBranch                   string            `json:"default_branch,omitempty"`
 	Description                     string            `json:"description,omitempty"`
@@ -55,6 +52,7 @@ type PipelineSpec struct {
 // PipelineStatus defines the observed state of Pipeline
 type PipelineStatus struct {
 	// Last observed state of the build job
+	Slug       *string      `json:"slug,omitempty"`
 	URL        *string      `json:"url,omitempty"`
 	WebURL     *string      `json:"web_url,omitempty"`
 	BuildsURL  *string      `json:"builds_url,omitempty"`
@@ -115,8 +113,8 @@ const (
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:printcolumn:name="State",type=string,JSONPath=`.spec.status.build`
-//+kubebuilder:printcolumn:name="Organization",type=string,JSONPath=`.spec.spec.organization`
+//+kubebuilder:printcolumn:name="State",type=string,JSONPath=`.status.build`
+//+kubebuilder:printcolumn:name="Organization",type=string,JSONPath=`.spec.organization`
 
 // Pipeline is the Schema for the pipelines API
 type Pipeline struct {
