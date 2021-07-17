@@ -88,7 +88,7 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	// check if exists
 	var resp *buildkite.Pipeline
 	if pipeline.Status.Slug != nil {
-		guessSlug := nameToSlug(pipeline.ObjectMeta.Name)
+		guessSlug := nameToSlug(pipeline.Spec.PipelineName)
 		resp, _, err = client.Pipelines.Get(organization, guessSlug)
 		if err != nil {
 			log.Log.Error(err, "there was an problem when retrieving the pipeline from the Buildkite API")
