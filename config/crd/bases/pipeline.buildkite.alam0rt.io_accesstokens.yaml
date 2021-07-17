@@ -16,7 +16,14 @@ spec:
     singular: accesstoken
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.uuid
+      name: UUID
+      type: string
+    - jsonPath: .status.scopes
+      name: Scopes
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: AccessToken is the Schema for the accesstokens API
@@ -46,8 +53,29 @@ spec:
           status:
             description: AccessTokenStatus defines the observed state of AccessToken
             properties:
+              lastTimeAuthenticated:
+                description: LastTimeAuthenticated is the time when the token was
+                  used last to successfully authenticate to the Buildkite API
+                type: string
               scopes:
+                description: Scopes are a list of the access permissions of the token
+                  https://buildkite.com/docs/apis/managing-api-tokens#token-scopes
                 items:
+                  enum:
+                  - read_agents
+                  - write_agents
+                  - read_teams
+                  - read_artifacts
+                  - write_artifacts
+                  - read_builds
+                  - write_builds
+                  - read_job_env
+                  - read_build_logs
+                  - write_build_logs
+                  - read_organizations
+                  - read_pipelines
+                  - write_pipelines
+                  - read_user
                   type: string
                 type: array
               token:
@@ -55,9 +83,8 @@ spec:
                   resource
                 type: string
               uuid:
-                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                  of cluster Important: Run "make" to regenerate code after modifying
-                  this file'
+                description: UUID is the unique identifier of the supplied access
+                  token
                 type: string
             type: object
         type: object

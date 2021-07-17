@@ -20,14 +20,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // PipelineSpec defines the desired state of Pipeline
 type PipelineSpec struct {
 	// Steps for the pipeline to take
 	// https://buildkite.com/docs/pipelines/defining-steps#step-defaults
 	AccessTokenRef string `json:"accessTokenRef"`
+	Organization   string `json:"organization"`
 	Steps          []Step `json:"step"`
 }
 
@@ -89,6 +87,8 @@ const (
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="State",type=string,JSONPath=`.spec.status.build`
+//+kubebuilder:printcolumn:name="Organization",type=string,JSONPath=`.spec.spec.organization`
 
 // Pipeline is the Schema for the pipelines API
 type Pipeline struct {

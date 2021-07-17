@@ -86,6 +86,7 @@ kind: docker-build manifests kustomize ## deploy into kind cluster
 	kind load docker-image ${IMG}
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f - --context kind-kind
+	kubectl rollout restart deployment -n buildkite-operator-system
 
 
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.

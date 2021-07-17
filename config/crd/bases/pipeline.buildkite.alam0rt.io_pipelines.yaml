@@ -16,7 +16,14 @@ spec:
     singular: pipeline
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.status.build
+      name: State
+      type: string
+    - jsonPath: .spec.spec.organization
+      name: Organization
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Pipeline is the Schema for the pipelines API
@@ -38,6 +45,8 @@ spec:
             properties:
               accessTokenRef:
                 description: Steps for the pipeline to take https://buildkite.com/docs/pipelines/defining-steps#step-defaults
+                type: string
+              organization:
                 type: string
               step:
                 items:
@@ -67,6 +76,7 @@ spec:
                 type: array
             required:
             - accessTokenRef
+            - organization
             - step
             type: object
           status:

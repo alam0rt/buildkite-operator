@@ -103,7 +103,7 @@ func (in *AccessTokenStatus) DeepCopyInto(out *AccessTokenStatus) {
 	*out = *in
 	if in.Scopes != nil {
 		in, out := &in.Scopes, &out.Scopes
-		*out = make(Scopes, len(*in))
+		*out = make([]Scope, len(*in))
 		copy(*out, *in)
 	}
 }

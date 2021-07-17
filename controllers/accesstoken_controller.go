@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"errors"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -26,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/alam0rt/buildkite-operator/api/v1alpha1"
 	pipelinev1alpha1 "github.com/alam0rt/buildkite-operator/api/v1alpha1"
 	"github.com/alam0rt/go-buildkite/v2/buildkite"
 )
@@ -74,32 +76,36 @@ func (r *AccessTokenReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	apiKey := string(tokenSecret.Data["token"])
 	if len(apiKey) == 0 {
 		err := errors.New("supplied token is empty")
-		log.Log.Error(err, "unable to autoenticate to Buildkite")
+		log.Log.Error(err, "unable to authenticate to Buildkite")
 		return ctrl.Result{}, err
 	}
 
 	config, err := buildkite.NewTokenConfig(apiKey, false)
 	if err != nil {
-		log.Log.Error(err, "unable to authenticate to buildkite using supplied token")
-		// this error is bad and thus we exit
+		err := errors.New("unable to instantiate the Buildkite config")
+		log.Log.Error(err, "unable to authenticate to Buildkite")
 		return ctrl.Result{}, err
 	}
 
-	implemented := false
-	if implemented {
-		client := buildkite.NewClient(config.Client())
+	client := buildkite.NewClient(config.Client())
 
-		var token *buildkite.AccessToken
-		token, _, err = client.GetToken()
-		if err != nil {
-			log.Log.Error(err, "there was a problem getting the current access token")
-			// this error is bad and thus we exit
-			return ctrl.Result{}, err
-		}
-		log.Log.Info(*token.UUID)
+	var accessTokenBuildkite *buildkite.AccessToken
+	accessTokenBuildkite, _, err = client.AccessTokens.Get()
+	if err != nil {
+		log.Log.Error(err, "supplied API key could not be used to authenticate")
 	}
 
+	// Only after verifying the access token do we set it in the status
 	accessToken.Status.Token = apiKey
+	accessToken.Status.UUID = *accessTokenBuildkite.UUID
+	accessToken.Status.Scopes = accessToken.Status.Scopes[:0]
+	for _, scope := range *accessTokenBuildkite.Scopes {
+		accessToken.Status.Scopes = append(accessToken.Status.Scopes, v1alpha1.Scope(scope))
+	}
+	accessToken.Status.LastTimeAuthenticated = time.Now().String()
+
+	// rate limiting
+	time.Sleep(time.Duration(5) * time.Second)
 
 	if err := r.Status().Update(ctx, &accessToken); err != nil {
 		log.Log.Error(err, "unable to update AccessToken status")

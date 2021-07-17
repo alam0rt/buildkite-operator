@@ -71,17 +71,16 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	client := buildkite.NewClient(config.Client())
 
-	// these are here for the sake of testing and will
-	// be pulled from the pipeline.spec
-	var tempOrg string
-	var tempSlug string
+	pipelineSlug := pipeline.ObjectMeta.Name
+	organization := pipeline.Spec.Organization
 
-	tempOrg = "none-63"
-	tempSlug = "example"
-
-	pipelineRemote, _, err := client.Pipelines.Get(tempOrg, tempSlug)
+	pipelineRemote, resp, err := client.Pipelines.Get(organization, pipelineSlug)
 	if err != nil {
-		log.Log.Error(err, "there was a problem pulling the pipeline from the buildkite org")
+		if resp.StatusCode == 404 {
+			log.Log.Error(err, "the supplied Pipeline or Organization does not exist")
+
+		}
+		log.Log.Error(err, "there was an unknown problem when retrieving the pipeline from the Buildkite API")
 		return ctrl.Result{}, err
 	}
 
@@ -89,6 +88,11 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	// try this bad boy on for size
 	pipeline.Status.BuildState = pipelinev1alpha1.PassedBuildState
+
+	if err := r.Status().Update(ctx, &pipeline); err != nil {
+		log.Log.Error(err, "unable to update Pipeline status")
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }

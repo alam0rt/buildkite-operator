@@ -20,23 +20,57 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// +kubebuilder:validation:Enum=read_agents;write_agents;read_teams;read_artifacts;write_artifacts;read_builds;write_builds;read_job_env;read_build_logs;write_build_logs;read_organizations;read_pipelines;write_pipelines;read_user
 type Scope string
 
 const (
-	// TODO: implement access token API
+	// Permission to list and retrieve details of agents
 	ReadAgentsScope Scope = "read_agents"
+
+	// Permission to create, update and delete agents
+	WriteAgentsScope Scope = "write_agents"
+
+	// Permission to list teams
+	ReadTeamsScope Scope = "read_teams"
+
+	// Permission to retrieve build artifacts
+	ReadArtifactsScope Scope = "read_artifacts"
+
+	// Permission to delete build artifacts
+	WriteArtifactsScope Scope = "write_artifacts"
+
+	// Permission to list and retrieve details of builds
+	ReadBuildsScope Scope = "read_builds"
+
+	// Permission to create new builds
+	WriteBuildsScope Scope = "write_builds"
+
+	// Permission to retrieve job environment variables
+	ReadJobEnvScope Scope = "read_job_env"
+
+	// Permission to retrieve build logs
+	ReadBuildLogsScope Scope = "read_build_logs"
+
+	// Permission to delete build logs
+	WriteBuildLogsScope Scope = "write_build_logs"
+
+	// Permission to list and retrieve details of organizations
+	ReadOrganizationsScope Scope = "read_organizations"
+
+	// Permission to list and retrieve details of pipelines
+	ReadPipelinesScope Scope = "read_pipelines"
+
+	// Permission to create, update and delete pipelines
+	WritePipelinesScope Scope = "write_pipelines"
+
+	// Permission to retrieve basic details of the user
+	ReadUserScope Scope = "read_user"
 )
 
 type Scopes []Scope
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // AccessTokenSpec defines the desired state of AccessToken
 type AccessTokenSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
 	// SecretRef takes  a secret name and uses the `token` key to authenticate
 	// all requests.
 	SecretRef string `json:"secretRef"`
@@ -44,17 +78,25 @@ type AccessTokenSpec struct {
 
 // AccessTokenStatus defines the observed state of AccessToken
 type AccessTokenStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	UUID   string `json:"uuid,omitempty"`
-	Scopes Scopes `json:"scopes,omitempty"`
+	// UUID is the unique identifier of the supplied access token
+	UUID string `json:"uuid,omitempty"`
+
+	// Scopes are a list of the access permissions of the token
+	// https://buildkite.com/docs/apis/managing-api-tokens#token-scopes
+	Scopes []Scope `json:"scopes,omitempty"`
 
 	// Token is the Buildkite API token retrieved from the AccessToken resource
 	Token string `json:"token,omitempty"`
+
+	// LastTimeAuthenticated is the time when the token was used last to successfully
+	// authenticate to the Buildkite API
+	LastTimeAuthenticated string `json:"lastTimeAuthenticated,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="UUID",type=string,JSONPath=`.status.uuid`
+//+kubebuilder:printcolumn:name="Scopes",type=string,JSONPath=`.status.scopes`
 
 // AccessToken is the Schema for the accesstokens API
 type AccessToken struct {
