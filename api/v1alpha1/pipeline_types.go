@@ -70,7 +70,7 @@ type PipelineStatus struct {
 	Provider *Provider `json:"provider,omitempty" yaml:"provider,omitempty"`
 
 	// build state
-	BuildState BuildState `json:"build"`
+	//	BuildState BuildState `json:"build"`
 }
 
 // BuildState describes the state of the overall pipeline.
@@ -113,7 +113,6 @@ const (
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:printcolumn:name="State",type=string,JSONPath=`.status.build`
 //+kubebuilder:printcolumn:name="Slug",type=string,JSONPath=`.status.slug`
 //+kubebuilder:printcolumn:name="Organization",type=string,JSONPath=`.spec.organization`
 //+kubebuilder:printcolumn:name="Url",type=string,JSONPath=`.status.builds_url`

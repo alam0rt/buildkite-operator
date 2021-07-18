@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"time"
 
@@ -39,26 +40,12 @@ type PipelineReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-func nameToSlug(s string) string {
-	s = strings.ToLower(s)
-	split := strings.Split(s, " ")
-	slug := strings.Join(split, "-")
-	return slug
-}
-
 //+kubebuilder:rbac:groups=pipeline.buildkite.alam0rt.io,resources=pipelines,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=pipeline.buildkite.alam0rt.io,resources=pipelines/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=pipeline.buildkite.alam0rt.io,resources=pipelines/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Pipeline object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 	var pipeline pipelinev1alpha1.Pipeline
@@ -85,32 +72,32 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	organization := pipeline.Spec.Organization
 
+	nameToSlug := func(s string) string {
+		s = strings.ToLower(s)
+		split := strings.Split(s, " ")
+		slug := strings.Join(split, "-")
+		return slug
+	}
+
 	// check if exists
 	var resp *buildkite.Pipeline
-	if pipeline.Status.Slug != nil {
-		guessSlug := nameToSlug(pipeline.Spec.PipelineName)
-		resp, _, err = client.Pipelines.Get(organization, guessSlug)
-		if err != nil {
-			log.Log.Error(err, "there was an problem when retrieving the pipeline from the Buildkite API")
-		} else {
 
-			// this is the most important thing to set
-			pipeline.Status.Slug = resp.Slug
-
-			// update the status
-			pipeline.Status.CreatedAt = (*v1.Time)(resp.ArchivedAt)
-			pipeline.Status.BuildState = pipelinev1alpha1.PassedBuildState
-			pipeline.Status.RunningBuildsCount = resp.RunningBuildsCount
-			pipeline.Status.ScheduledBuildsCount = resp.ScheduledBuildsCount
-			pipeline.Status.ScheduledJobsCount = resp.ScheduledJobsCount
-			pipeline.Status.RunningJobsCount = resp.RunningJobsCount
-			pipeline.Status.BuildsURL = resp.BuildsURL
-			pipeline.Status.Provider = &v1alpha1.Provider{
-				ID:         resp.Provider.ID,
-				WebhookURL: resp.Provider.WebhookURL,
-			}
-		}
+	guessSlug := nameToSlug(pipeline.Spec.PipelineName)
+	resp, _, err = client.Pipelines.Get(organization, guessSlug)
+	if err != nil {
+		log.Log.Info("could not find pipeline remotely, a pipeline will be created")
 	} else {
+		if pipeline.Spec.PipelineName != *resp.Name {
+			err = errors.New("pipeline name does not match supplied")
+			log.Log.Error(err, "there was an problem when retrieving the pipeline from the Buildkite API")
+			return ctrl.Result{}, err
+		} else {
+			log.Log.Info("got pipeline from Buildkite API")
+			pipeline.Status.Slug = resp.Slug
+		}
+	}
+
+	if pipeline.Status.Slug == nil {
 		// if we can't retrieve the pipeline we assume it may not exist yet
 		input := &buildkite.CreatePipeline{
 			Name:          pipeline.Spec.PipelineName,
@@ -120,8 +107,9 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 		jsonInput, _ := json.Marshal(input)
 		log.Log.Info(string(jsonInput))
+		var apiResp *buildkite.Response
 
-		resp, apiResp, err := client.Pipelines.Create(organization, input)
+		resp, apiResp, err = client.Pipelines.Create(organization, input)
 		if err != nil {
 			if apiResp.Response.StatusCode == 422 {
 				log.Log.Error(err, "there was an issue validating the pipeline input")
@@ -129,23 +117,48 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			}
 			log.Log.Error(err, "there was an unknown exception")
 		}
+		log.Log.Info("successfully created pipeline")
 
-		// this is the most important thing to set
-		pipeline.Status.Slug = resp.Slug
+	}
 
-		// update the status
-		pipeline.Status.CreatedAt = (*v1.Time)(resp.ArchivedAt)
-		pipeline.Status.BuildState = pipelinev1alpha1.PassedBuildState
-		pipeline.Status.RunningBuildsCount = resp.RunningBuildsCount
-		pipeline.Status.ScheduledBuildsCount = resp.ScheduledBuildsCount
-		pipeline.Status.ScheduledJobsCount = resp.ScheduledJobsCount
-		pipeline.Status.RunningJobsCount = resp.RunningJobsCount
-		pipeline.Status.BuildsURL = resp.BuildsURL
-		pipeline.Status.Provider = &v1alpha1.Provider{
+	resp.BranchConfiguration = &pipeline.Spec.BranchConfiguration
+	resp.CancelRunningBranchBuilds = &pipeline.Spec.CancelRunningBranchBuilds
+	resp.CancelRunningBranchBuildsFilter = &pipeline.Spec.CancelRunningBranchBuildsFilter
+	resp.DefaultBranch = &pipeline.Spec.DefaultBranch
+	resp.Description = &pipeline.Spec.Description
+	resp.Repository = &pipeline.Spec.Repository
+	resp.SkipQueuedBranchBuilds = &pipeline.Spec.SkipQueuedBranchBuilds
+	resp.SkipQueuedBranchBuildsFilter = &pipeline.Spec.SkipQueuedBranchBuildsFilter
+	// TODO: implement Visibility when its in go-buildkite
+	// resp.Visibility = &pipeline.Spec.Visibility
+
+	// TODO: implement ProviderSettings
+
+	updateResp, err := client.Pipelines.Update(organization, resp)
+	if err != nil {
+		log.Log.Error(err, "unable to update Pipeline API")
+		return ctrl.Result{}, err
+	} else if updateResp.Response.StatusCode == 200 {
+		log.Log.Info("successfully reconciled the pipeline")
+	}
+
+	pipeline.Status = v1alpha1.PipelineStatus{
+		Slug: resp.Slug,
+		Provider: &pipelinev1alpha1.Provider{
 			ID:         resp.Provider.ID,
 			WebhookURL: resp.Provider.WebhookURL,
-		}
+		},
+		URL:       resp.URL,
+		BuildsURL: resp.BuildsURL,
+		BadgeURL:  resp.BadgeURL,
 
+		CreatedAt:            (*v1.Time)(resp.CreatedAt),
+		ArchivedAt:           (*v1.Time)(resp.ArchivedAt),
+		RunningBuildsCount:   resp.RunningBuildsCount,
+		ScheduledBuildsCount: resp.ScheduledBuildsCount,
+
+		RunningJobsCount:   resp.RunningJobsCount,
+		ScheduledJobsCount: resp.ScheduledJobsCount,
 	}
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {

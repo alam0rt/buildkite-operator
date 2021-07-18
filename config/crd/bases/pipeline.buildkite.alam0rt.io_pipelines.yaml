@@ -17,9 +17,6 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.build
-      name: State
-      type: string
     - jsonPath: .status.slug
       name: Slug
       type: string
@@ -193,20 +190,6 @@ spec:
                 type: string
               badge_url:
                 type: string
-              build:
-                description: build state
-                enum:
-                - Scheduled
-                - Running
-                - Passed
-                - Failed
-                - Blocked
-                - Canceling
-                - Canceled
-                - Skipped
-                - NotRun
-                - Finished
-                type: string
               builds_url:
                 type: string
               created_at:
@@ -240,8 +223,6 @@ spec:
                 type: integer
               web_url:
                 type: string
-            required:
-            - build
             type: object
         type: object
     served: true
