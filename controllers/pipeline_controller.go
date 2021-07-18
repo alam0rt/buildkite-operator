@@ -60,6 +60,13 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
+	// check that supplied access token has the correct permissions
+	for _, scope := range accessTokenResource.Status.Scopes {
+		if scope == pipelinev1alpha1.WritePipelinesScope {
+			log.Log.Info("provided token has write pipeline permissions")
+		}
+	}
+
 	apiToken := accessTokenResource.Status.Token
 	config, err := buildkite.NewTokenConfig(apiToken, false)
 	if err != nil {
