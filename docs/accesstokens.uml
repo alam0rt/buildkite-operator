@@ -1,0 +1,12 @@
+@startuml
+title AccessToken Controller
+
+-> etcd : Access Token Resource created
+operator <- etcd : resource is loaded
+operator -> etcd : check for secret in spec.SecretRef
+operator -> buildkite API : get token api call
+alt token is valid
+  operator -> access token resource : update status with token
+else failure
+  operator -> operator : stop operating on this access token
+@enduml
