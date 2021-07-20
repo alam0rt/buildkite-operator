@@ -1,12 +1,51 @@
+   AccessToken Controller
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+                                     AccessToken Controller
+
+                        ┌────┐                  ┌────────┐                      ┌─────────┐
+                        │etcd│                  │operator│                      │buildkite│
+                        └─┬──┘                  └───┬────┘                      └────┬────┘
+    access token loaded   │                         │                                │
+ ─────────────────────────>                         │                                │
+                          │                         │                                │
+  ╔══════════════════════╗│                         │                                │
+  ║kind: AccessToken    ░║│    resource is loaded   │                                │
+  ║spec:                 ║│ ────────────────────────>                                │
+  ║  secretRef: banshee  ║│                         │                                │
+  ╚══════════════════════╝│                         │                                │
+                          │     check for secret    │                                │
+                          │ <────────────────────────                                │
+                          │                         │                                │
+                          │                         │ use token to check access-token│
+                          │                         │ ───────────────────────────────>
+                          │                         │                                │
+                          │                         │                                │
+              ╔══════╤════╪═════════════════════════╪══════════════╗                 │
+              ║ ALT  │  token is valid              │              ║                 │
+              ╟──────┘    │                         │              ║                 │
+              ║           │ update status with token│              ║                 │
+              ║           │ <────────────────────────              ║                 │
+              ╚═══════════╪═════════════════════════╪══════════════╝                 │
+                        ┌─┴──┐                  ┌───┴────┐                      ┌────┴────┐
+                        │etcd│                  │operator│                      │buildkite│
+                        └────┘                  └────────┘                      └─────────┘
+
 @startuml
 title AccessToken Controller
 
--> etcd : Access Token Resource created
+-> etcd : access token loaded
 operator <- etcd : resource is loaded
-operator -> etcd : check for secret in spec.SecretRef
-operator -> buildkite API : get token api call
+note left
+kind: AccessToken
+spec:
+  secretRef: banshee
+end note
+
+operator -> etcd : check for secret
+operator -> buildkite : use token to check access-token
 alt token is valid
-  operator -> access token resource : update status with token
-else failure
-  operator -> operator : stop operating on this access token
+  operator -> etcd : update status with token
+end
 @enduml

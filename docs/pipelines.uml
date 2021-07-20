@@ -1,0 +1,84 @@
+   Pipeline Controller
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+                                                  Pipeline Controller
+
+                                  ┌────┐                  ┌────────┐                    ┌─────────┐
+                                  │etcd│                  │operator│                    │buildkite│
+                                  └─┬──┘                  └───┬────┘                    └────┬────┘
+  ╔════════════════════════════════╗│                         │                              │
+  ║kind: Pipeline                 ░║│                         │                              │
+  ║metadata:                       ║│ pipeline resource loaded│                              │
+  ║  name: Banshee                 ║│ <───────────────────────>                              │
+  ║spec:                           ║│                         │                              │
+  ║  organization: coco            ║│                         │                              │
+  ║  accessTokenRef: trail-blazer  ║│                         │                              │
+  ╚════════════════════════════════╝│                         │                              │
+                                    │                         │────┐                         │
+                                    │                         │    │ load access token       │
+                                    │                         │<───┘                         │
+                                    │                         │                              │
+                                    │                         │                              │
+                                    │           ╔══════╤══════╪══════════════════════════════╪════╗
+                                    │           ║ ALT  │  pipeline slug not present in resource status
+                                    │           ╟──────┘      │                              │    ║
+                                    │           ║             │────┐                         │    ║
+                                    │           ║             │    │ guess the slug by taking│    ║
+                                    │           ║             │<───┘ the name of the pipeline│    ║
+                                    │           ║             │      and kebab-casing it     │    ║
+                                    │           ║             │                              │    ║
+                                    │           ╚═════════════╪══════════════════════════════╪════╝
+                                    │                         │                              │
+                                    │                         │check for pipeline using slug┌┴┐
+                                    │                         │ ───────────────────────────>│ │
+                                    │                         │                             │ │
+                                    │                         │                             │ │
+                                    │           ╔══════╤══════╪═════════════════════════════╪═╪═════════════╗
+                                    │           ║ ALT  │  pipeline not found                │ │             ║
+                                    │           ╟──────┘      │                             │ │             ║
+                                    │           ║             │       create pipeline       │ │             ║
+                                    │           ║             │ ───────────────────────────>│ │             ║
+                                    │           ╚═════════════╪═════════════════════════════╪═╪═════════════╝
+                                    │                         │                             └┬┘
+                                    │                         │        update pipeline       │
+                                    │                         │ ─────────────────────────────>
+                                    │                         │                              │
+                                    │      update status      │                              │
+                                    │ <────────────────────────                              │
+                                  ┌─┴──┐                  ┌───┴────┐                    ┌────┴────┐
+                                  │etcd│                  │operator│                    │buildkite│
+                                  └────┘                  └────────┘                    └─────────┘
+
+@startuml
+title Pipeline Controller
+
+etcd <-> operator : pipeline resource loaded
+note left
+  kind: Pipeline
+  metadata:
+    name: Banshee
+  spec:
+    organization: coco
+    accessTokenRef: trail-blazer
+end note
+
+operator -> operator : load access token
+
+alt pipeline slug not present in resource status
+  operator -> operator : guess the slug by taking\nthe name of the pipeline\nand kebab-casing it
+end
+
+operator -> buildkite : check for pipeline using slug
+activate buildkite
+
+alt pipeline not found
+  operator -> buildkite : create pipeline
+end
+
+operator -> buildkite : update pipeline
+
+deactivate buildkite
+
+operator -> etcd : update status
+@enduml
