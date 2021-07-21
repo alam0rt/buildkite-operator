@@ -20,7 +20,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"strings"
 	"time"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -78,33 +77,15 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	client := buildkite.NewClient(config.Client())
 
 	organization := pipeline.Spec.Organization
+	nameSlug := pipeline.Spec.PipelineName // we make the opinion that slug needs to equal the pipeline name - alas, nameSlug :)
 
-	nameToSlug := func(s string) string {
-		s = strings.ToLower(s)
-		split := strings.Split(s, " ")
-		slug := strings.Join(split, "-")
-		return slug
-	}
-
-	// check if exists
+	// check that the remote pipeline exists
 	var resp *buildkite.Pipeline
+	var httpResp *buildkite.Response
 
-	guessSlug := nameToSlug(pipeline.Spec.PipelineName)
-	resp, _, err = client.Pipelines.Get(organization, guessSlug)
-	if err != nil {
+	resp, httpResp, err = client.Pipelines.Get(organization, nameSlug)
+	if httpResp.Response.StatusCode != 200 {
 		log.Log.Info("could not find pipeline remotely, a pipeline will be created")
-	} else {
-		if pipeline.Spec.PipelineName != *resp.Name {
-			err = errors.New("pipeline name does not match supplied")
-			log.Log.Error(err, "there was an problem when retrieving the pipeline from the Buildkite API")
-			return ctrl.Result{}, err
-		} else {
-			log.Log.Info("got pipeline from Buildkite API")
-			pipeline.Status.Slug = resp.Slug
-		}
-	}
-
-	if pipeline.Status.Slug == nil {
 		// if we can't retrieve the pipeline we assume it may not exist yet
 		input := &buildkite.CreatePipeline{
 			Name:          pipeline.Spec.PipelineName,
@@ -126,8 +107,27 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 		log.Log.Info("successfully created pipeline")
 
+	} else if httpResp.StatusCode == 200 {
+		pipeline.Status.Slug = resp.Slug
+		if nameSlug != *resp.Name {
+			log.Log.Info("remote pipeline was found but does not match expected name - will update to make it match")
+			resp.Name = &nameSlug
+		}
+
+		if nameSlug != *resp.Slug {
+			// this check is just to confirm the slug used to retrieve the pipeline matches said pipelines slug
+			// which it always should...
+			err = errors.New("provided slug does not match remote slug and should never occur")
+			log.Log.Error(err, "something is very wrong")
+			return ctrl.Result{}, err
+		}
+	} else if err != nil {
+		log.Log.Error(err, "there was a problem creating the pipeline")
+		return ctrl.Result{}, err
+
 	}
 
+	resp.Name = &nameSlug // the name must equal the slug and vice versa
 	resp.BranchConfiguration = &pipeline.Spec.BranchConfiguration
 	resp.CancelRunningBranchBuilds = &pipeline.Spec.CancelRunningBranchBuilds
 	resp.CancelRunningBranchBuildsFilter = &pipeline.Spec.CancelRunningBranchBuildsFilter
