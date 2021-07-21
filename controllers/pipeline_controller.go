@@ -74,21 +74,20 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
-	client := buildkite.NewClient(config.Client())
-
-	organization := pipeline.Spec.Organization
-	nameSlug := pipeline.Spec.PipelineName // we make the opinion that slug needs to equal the pipeline name - alas, nameSlug :)
-
 	// check that the remote pipeline exists
 	var resp *buildkite.Pipeline
 	var httpResp *buildkite.Response
 
+	nameSlug := pipeline.Spec.PipelineName // we make the opinion that slug needs to equal the pipeline name - alas, nameSlug :)
+	organization := pipeline.Spec.Organization
+
+	client := buildkite.NewClient(config.Client())
 	resp, httpResp, err = client.Pipelines.Get(organization, nameSlug)
 	if httpResp.Response.StatusCode != 200 {
 		log.Log.Info("could not find pipeline remotely, a pipeline will be created")
 		// if we can't retrieve the pipeline we assume it may not exist yet
 		input := &buildkite.CreatePipeline{
-			Name:          pipeline.Spec.PipelineName,
+			Name:          nameSlug,
 			Repository:    pipeline.Spec.Repository,
 			Configuration: pipeline.Spec.Configuration,
 		}
