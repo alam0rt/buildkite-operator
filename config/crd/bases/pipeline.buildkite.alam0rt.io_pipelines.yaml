@@ -17,15 +17,15 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.slug
-      name: Slug
-      type: string
     - jsonPath: .spec.organization
       name: Organization
       type: string
-    - jsonPath: .status.builds_url
-      name: Url
-      type: string
+    - jsonPath: .status.running_builds_count
+      name: RunningBuilds
+      type: integer
+    - jsonPath: .status.running_jobs_count
+      name: RunningJobs
+      type: integer
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -70,8 +70,6 @@ spec:
                   type: string
                 type: object
               organization:
-                type: string
-              pipelineName:
                 description: Steps for the pipeline to take https://buildkite.com/docs/pipelines/defining-steps#step-defaults
                 type: string
               provider_settings:
@@ -179,7 +177,6 @@ spec:
             required:
             - accessTokenRef
             - organization
-            - pipelineName
             - repository
             type: object
           status:

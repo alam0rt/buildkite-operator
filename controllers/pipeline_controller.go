@@ -18,9 +18,7 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"strings"
 	"time"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,6 +36,90 @@ import (
 type PipelineReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+}
+
+// PipelineAL defines what methods are required to manage pipelines
+type PipelineAL interface {
+	Get() (buildkite.Pipeline, error)
+	Create(pipelineInput *buildkite.CreatePipeline) error
+	Update(pipeline *buildkite.Pipeline) error
+	Exists() (bool, error)
+}
+
+type buildkitePipeline struct {
+	client       buildkite.Client
+	organization string
+	nameSlug     string
+}
+
+func newBuildkitePipelineAL(organization, nameSlug, accessToken string) (PipelineAL, error) {
+	config, err := buildkite.NewTokenConfig(accessToken, false)
+	if err != nil {
+		return nil, err
+	}
+
+	client := buildkite.NewClient(config.Client())
+
+	pipeline := &buildkitePipeline{
+		client:       *client,
+		organization: organization,
+		nameSlug:     nameSlug,
+	}
+	return pipeline, nil
+}
+
+func (p *buildkitePipeline) Create(pipelineInput *buildkite.CreatePipeline) error {
+	_, _, err := p.client.Pipelines.Create(p.organization, pipelineInput)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *buildkitePipeline) Exists() (bool, error) {
+	_, resp, err := p.client.Pipelines.Get(p.organization, p.nameSlug)
+	if err != nil {
+		return false, err
+	}
+
+	if resp.Response.StatusCode == 404 {
+		return false, nil
+	}
+
+	if resp.Response.StatusCode == 200 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func (p *buildkitePipeline) Get() (buildkite.Pipeline, error) {
+	pipeline := &buildkite.Pipeline{}
+	pipeline, httpResp, err := p.client.Pipelines.Get(p.organization, p.nameSlug)
+	if err != nil {
+		return *pipeline, err
+	}
+
+	if httpResp.Response.StatusCode == 404 {
+		err = errors.New("pipeline not found")
+		return *pipeline, err
+	}
+
+	return *pipeline, nil
+}
+
+func (p *buildkitePipeline) Update(pipeline *buildkite.Pipeline) error {
+	updateResp, err := p.client.Pipelines.Update(p.organization, pipeline)
+	if err != nil {
+		return err
+	}
+
+	if updateResp.Response.StatusCode == 200 {
+		return nil
+	}
+
+	err = errors.New("there was an unknown exception updating the pipeline")
+	return err
 }
 
 //+kubebuilder:rbac:groups=pipeline.buildkite.alam0rt.io,resources=pipelines,verbs=get;list;watch;create;update;patch;delete
@@ -68,66 +150,63 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	apiToken := accessTokenResource.Status.Token
-	config, err := buildkite.NewTokenConfig(apiToken, false)
+	// check that the remote pipeline exists
+	var resp buildkite.Pipeline
+
+	nameSlug := pipeline.ObjectMeta.Name // we make the opinion that slug needs to equal the pipeline name - alas, nameSlug :)
+	organization := pipeline.Spec.Organization
+
+	p, err := newBuildkitePipelineAL(organization, nameSlug, apiToken)
 	if err != nil {
 		log.Log.Error(err, "unable to authenticate to buildkite using supplied token")
 		// this error is bad and thus we exit
 		return ctrl.Result{}, err
 	}
 
-	client := buildkite.NewClient(config.Client())
-
-	organization := pipeline.Spec.Organization
-
-	nameToSlug := func(s string) string {
-		s = strings.ToLower(s)
-		split := strings.Split(s, " ")
-		slug := strings.Join(split, "-")
-		return slug
-	}
-
-	// check if exists
-	var resp *buildkite.Pipeline
-
-	guessSlug := nameToSlug(pipeline.Spec.PipelineName)
-	resp, _, err = client.Pipelines.Get(organization, guessSlug)
-	if err != nil {
+	exists, err := p.Exists()
+	if exists == false {
 		log.Log.Info("could not find pipeline remotely, a pipeline will be created")
-	} else {
-		if pipeline.Spec.PipelineName != *resp.Name {
-			err = errors.New("pipeline name does not match supplied")
-			log.Log.Error(err, "there was an problem when retrieving the pipeline from the Buildkite API")
-			return ctrl.Result{}, err
-		} else {
-			log.Log.Info("got pipeline from Buildkite API")
-			pipeline.Status.Slug = resp.Slug
-		}
-	}
-
-	if pipeline.Status.Slug == nil {
 		// if we can't retrieve the pipeline we assume it may not exist yet
 		input := &buildkite.CreatePipeline{
-			Name:          pipeline.Spec.PipelineName,
+			Name:          nameSlug,
 			Repository:    pipeline.Spec.Repository,
 			Configuration: pipeline.Spec.Configuration,
 		}
-
-		jsonInput, _ := json.Marshal(input)
-		log.Log.Info(string(jsonInput))
-		var apiResp *buildkite.Response
-
-		resp, apiResp, err = client.Pipelines.Create(organization, input)
+		err = p.Create(input)
 		if err != nil {
-			if apiResp.Response.StatusCode == 422 {
-				log.Log.Error(err, "there was an issue validating the pipeline input")
-				return ctrl.Result{}, err
-			}
-			log.Log.Error(err, "there was an unknown exception")
+			log.Log.Error(err, "there was an exception creating the pipeline")
+			return ctrl.Result{}, err
 		}
 		log.Log.Info("successfully created pipeline")
 
+	} else if exists {
+		resp, err = p.Get()
+		if err != nil {
+			log.Log.Error(err, "there was a problem retrieving the pipeline")
+			return ctrl.Result{}, err
+		}
+
+		pipeline.Status.Slug = resp.Slug
+
+		if nameSlug != *resp.Name {
+			log.Log.Info("remote pipeline was found but does not match expected name - will update to make it match")
+			resp.Name = &nameSlug
+		}
+
+		if nameSlug != *resp.Slug {
+			// this check is just to confirm the slug used to retrieve the pipeline matches said pipelines slug
+			// which it always should...
+			err = errors.New("provided slug does not match remote slug and should never occur")
+			log.Log.Error(err, "something is very wrong")
+			return ctrl.Result{}, err
+		}
+	} else if err != nil {
+		log.Log.Error(err, "there was a problem creating the pipeline")
+		return ctrl.Result{}, err
+
 	}
 
+	resp.Name = &nameSlug // the name must equal the slug and vice versa
 	resp.BranchConfiguration = &pipeline.Spec.BranchConfiguration
 	resp.CancelRunningBranchBuilds = &pipeline.Spec.CancelRunningBranchBuilds
 	resp.CancelRunningBranchBuildsFilter = &pipeline.Spec.CancelRunningBranchBuildsFilter
@@ -141,12 +220,10 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	// TODO: implement ProviderSettings
 
-	updateResp, err := client.Pipelines.Update(organization, resp)
+	err = p.Update(&resp)
 	if err != nil {
-		log.Log.Error(err, "unable to update Pipeline API")
+		log.Log.Error(err, "there was a problem updating the pipeline")
 		return ctrl.Result{}, err
-	} else if updateResp.Response.StatusCode == 200 {
-		log.Log.Info("successfully reconciled the pipeline")
 	}
 
 	pipeline.Status = v1alpha1.PipelineStatus{

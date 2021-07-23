@@ -24,7 +24,6 @@ import (
 type PipelineSpec struct {
 	// Steps for the pipeline to take
 	// https://buildkite.com/docs/pipelines/defining-steps#step-defaults
-	PipelineName string `json:"pipelineName"`
 	Organization string `json:"organization"`
 	Repository   string `json:"repository"`
 
@@ -113,9 +112,9 @@ const (
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:printcolumn:name="Slug",type=string,JSONPath=`.status.slug`
 //+kubebuilder:printcolumn:name="Organization",type=string,JSONPath=`.spec.organization`
-//+kubebuilder:printcolumn:name="Url",type=string,JSONPath=`.status.builds_url`
+//+kubebuilder:printcolumn:name="RunningBuilds",type=integer,JSONPath=`.status.running_builds_count`
+//+kubebuilder:printcolumn:name="RunningJobs",type=integer,JSONPath=`.status.running_jobs_count`
 
 // Pipeline is the Schema for the pipelines API
 type Pipeline struct {
