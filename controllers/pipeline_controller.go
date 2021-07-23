@@ -29,6 +29,7 @@ import (
 
 	"github.com/alam0rt/buildkite-operator/api/v1alpha1"
 	pipelinev1alpha1 "github.com/alam0rt/buildkite-operator/api/v1alpha1"
+	"github.com/alam0rt/buildkite-operator/pkg/pipelines"
 	"github.com/alam0rt/go-buildkite/v2/buildkite"
 )
 
@@ -36,90 +37,6 @@ import (
 type PipelineReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
-}
-
-// PipelineAL defines what methods are required to manage pipelines
-type PipelineAL interface {
-	Get() (buildkite.Pipeline, error)
-	Create(pipelineInput *buildkite.CreatePipeline) error
-	Update(pipeline *buildkite.Pipeline) error
-	Exists() (bool, error)
-}
-
-type buildkitePipeline struct {
-	client       buildkite.Client
-	organization string
-	nameSlug     string
-}
-
-func newBuildkitePipelineAL(organization, nameSlug, accessToken string) (PipelineAL, error) {
-	config, err := buildkite.NewTokenConfig(accessToken, false)
-	if err != nil {
-		return nil, err
-	}
-
-	client := buildkite.NewClient(config.Client())
-
-	pipeline := &buildkitePipeline{
-		client:       *client,
-		organization: organization,
-		nameSlug:     nameSlug,
-	}
-	return pipeline, nil
-}
-
-func (p *buildkitePipeline) Create(pipelineInput *buildkite.CreatePipeline) error {
-	_, _, err := p.client.Pipelines.Create(p.organization, pipelineInput)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (p *buildkitePipeline) Exists() (bool, error) {
-	_, resp, err := p.client.Pipelines.Get(p.organization, p.nameSlug)
-	if err != nil {
-		return false, err
-	}
-
-	if resp.Response.StatusCode == 404 {
-		return false, nil
-	}
-
-	if resp.Response.StatusCode == 200 {
-		return true, nil
-	}
-
-	return false, nil
-}
-
-func (p *buildkitePipeline) Get() (buildkite.Pipeline, error) {
-	pipeline := &buildkite.Pipeline{}
-	pipeline, httpResp, err := p.client.Pipelines.Get(p.organization, p.nameSlug)
-	if err != nil {
-		return *pipeline, err
-	}
-
-	if httpResp.Response.StatusCode == 404 {
-		err = errors.New("pipeline not found")
-		return *pipeline, err
-	}
-
-	return *pipeline, nil
-}
-
-func (p *buildkitePipeline) Update(pipeline *buildkite.Pipeline) error {
-	updateResp, err := p.client.Pipelines.Update(p.organization, pipeline)
-	if err != nil {
-		return err
-	}
-
-	if updateResp.Response.StatusCode == 200 {
-		return nil
-	}
-
-	err = errors.New("there was an unknown exception updating the pipeline")
-	return err
 }
 
 //+kubebuilder:rbac:groups=pipeline.buildkite.alam0rt.io,resources=pipelines,verbs=get;list;watch;create;update;patch;delete
@@ -156,7 +73,7 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	nameSlug := pipeline.ObjectMeta.Name // we make the opinion that slug needs to equal the pipeline name - alas, nameSlug :)
 	organization := pipeline.Spec.Organization
 
-	p, err := newBuildkitePipelineAL(organization, nameSlug, apiToken)
+	p, err := pipelines.NewBuildkitePipelineAL(organization, nameSlug, apiToken)
 	if err != nil {
 		log.Log.Error(err, "unable to authenticate to buildkite using supplied token")
 		// this error is bad and thus we exit
