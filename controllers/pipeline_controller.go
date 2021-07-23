@@ -40,14 +40,14 @@ type PipelineReconciler struct {
 
 // PipelineAL defines what methods are required to manage pipelines
 type PipelineAL interface {
-	Get() (*buildkite.Pipeline, error)
+	Get() (buildkite.Pipeline, error)
 	Create(pipelineInput *buildkite.CreatePipeline) error
 	Update(pipeline *buildkite.Pipeline) error
 	Exists() (bool, error)
 }
 
 type buildkitePipeline struct {
-	client       *buildkite.Client
+	client       buildkite.Client
 	organization string
 	nameSlug     string
 }
@@ -61,7 +61,7 @@ func newBuildkitePipelineAL(organization, nameSlug, accessToken string) (Pipelin
 	client := buildkite.NewClient(config.Client())
 
 	pipeline := &buildkitePipeline{
-		client:       client,
+		client:       *client,
 		organization: organization,
 		nameSlug:     nameSlug,
 	}
@@ -93,18 +93,19 @@ func (p *buildkitePipeline) Exists() (bool, error) {
 	return false, nil
 }
 
-func (p *buildkitePipeline) Get() (*buildkite.Pipeline, error) {
+func (p *buildkitePipeline) Get() (buildkite.Pipeline, error) {
+	pipeline := &buildkite.Pipeline{}
 	pipeline, httpResp, err := p.client.Pipelines.Get(p.organization, p.nameSlug)
 	if err != nil {
-		return nil, err
+		return *pipeline, err
 	}
 
 	if httpResp.Response.StatusCode == 404 {
 		err = errors.New("pipeline not found")
-		return nil, err
+		return *pipeline, err
 	}
 
-	return pipeline, nil
+	return *pipeline, nil
 }
 
 func (p *buildkitePipeline) Update(pipeline *buildkite.Pipeline) error {
@@ -150,9 +151,9 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	apiToken := accessTokenResource.Status.Token
 	// check that the remote pipeline exists
-	var resp *buildkite.Pipeline
+	var resp buildkite.Pipeline
 
-	nameSlug := pipeline.Spec.PipelineName // we make the opinion that slug needs to equal the pipeline name - alas, nameSlug :)
+	nameSlug := pipeline.ObjectMeta.Name // we make the opinion that slug needs to equal the pipeline name - alas, nameSlug :)
 	organization := pipeline.Spec.Organization
 
 	p, err := newBuildkitePipelineAL(organization, nameSlug, apiToken)
@@ -174,11 +175,19 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		err = p.Create(input)
 		if err != nil {
 			log.Log.Error(err, "there was an exception creating the pipeline")
+			return ctrl.Result{}, err
 		}
 		log.Log.Info("successfully created pipeline")
 
 	} else if exists {
+		resp, err = p.Get()
+		if err != nil {
+			log.Log.Error(err, "there was a problem retrieving the pipeline")
+			return ctrl.Result{}, err
+		}
+
 		pipeline.Status.Slug = resp.Slug
+
 		if nameSlug != *resp.Name {
 			log.Log.Info("remote pipeline was found but does not match expected name - will update to make it match")
 			resp.Name = &nameSlug
@@ -211,7 +220,7 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	// TODO: implement ProviderSettings
 
-	err = p.Update(resp)
+	err = p.Update(&resp)
 	if err != nil {
 		log.Log.Error(err, "there was a problem updating the pipeline")
 		return ctrl.Result{}, err
