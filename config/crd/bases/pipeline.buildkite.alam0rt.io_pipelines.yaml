@@ -73,7 +73,8 @@ spec:
                 description: Steps for the pipeline to take https://buildkite.com/docs/pipelines/defining-steps#step-defaults
                 type: string
               provider_settings:
-                description: ProviderSettings are settings for the pipeline provider.
+                description: ProviderSettings represents a source code provider. It
+                  is read-only, but settings may be written using Pipeline.ProviderSettings.
                 properties:
                   bitbucket_settings:
                     description: BitbucketSettings are settings for pipelines building
@@ -195,12 +196,12 @@ spec:
               provider:
                 description: the provider of sources
                 properties:
-                  id:
+                  ID:
                     type: string
                   webhook_url:
                     type: string
                 required:
-                - id
+                - ID
                 - webhook_url
                 type: object
               running_builds_count:

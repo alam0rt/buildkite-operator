@@ -66,7 +66,7 @@ type PipelineStatus struct {
 	WaitingJobsCount     *int `json:"waiting_jobs_count,omitempty"`
 
 	// the provider of sources
-	Provider *Provider `json:"provider,omitempty" yaml:"provider,omitempty"`
+	Provider *Provider `json:"provider,omitempty"`
 
 	// build state
 	//	BuildState BuildState `json:"build"`
@@ -134,13 +134,22 @@ type PipelineList struct {
 	Items           []Pipeline `json:"items"`
 }
 
-// Provider represents a source code provider. It is read-only, but settings may be written using Pipeline.ProviderSettings.
+// +kubebuilder:validation:Enum=github;github_enterprise;bitbucket;gitlab
+type ProviderID string
+
+const (
+	GitHubProvider           ProviderID = "github"
+	GitHubEnterpriseProvider ProviderID = "github_enterprise"
+	BitbucketProvider        ProviderID = "bitbucket"
+	GitLabProvider           ProviderID = "gitlab"
+)
+
 type Provider struct {
-	ID         string  `json:"id"`
+	ID         *string `json:"ID"`
 	WebhookURL *string `json:"webhook_url"`
 }
 
-// ProviderSettings are settings for the pipeline provider.
+// ProviderSettings represents a source code provider. It is read-only, but settings may be written using Pipeline.ProviderSettings.
 type ProviderSettings struct {
 	GitHubSettings           GitHubSettings           `json:"github_settings,omitempty"`
 	GitHubEnterpriseSettings GitHubEnterpriseSettings `json:"github_enterprise_settings,omitempty"`
