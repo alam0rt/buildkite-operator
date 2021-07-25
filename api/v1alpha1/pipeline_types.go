@@ -35,17 +35,22 @@ type PipelineSpec struct {
 	Configuration string `json:"configuration,omitempty"`
 
 	// Optional fields
-	DefaultBranch                   string            `json:"defaultBranch,omitempty"`
-	Description                     string            `json:"description,omitempty"`
-	Env                             map[string]string `json:"env,omitempty"`
-	ProviderSettings                ProviderSettings  `json:"providerSettings,omitempty"`
-	BranchConfiguration             string            `json:"branchConfiguration,omitempty"`
-	SkipQueuedBranchBuilds          bool              `json:"skipQueuedBranchBuilds,omitempty"`
-	SkipQueuedBranchBuildsFilter    string            `json:"skipQueuedBranchBuildsFilter,omitempty"`
-	CancelRunningBranchBuilds       bool              `json:"cancelRunningBranchBuilds,omitempty"`
-	CancelRunningBranchBuildsFilter string            `json:"cancelRunningBranchBuildsFilter,omitempty"`
-	TeamUuids                       []string          `json:"teamUUIDS,omitempty"`
-	ClusterID                       string            `json:"clusterID,omitempty"`
+	DefaultBranch       string            `json:"defaultBranch,omitempty"`
+	Description         string            `json:"description,omitempty"`
+	Env                 map[string]string `json:"env,omitempty"`
+	ProviderSettings    ProviderSettings  `json:"providerSettings,omitempty"`
+	BranchConfiguration string            `json:"branchConfiguration,omitempty"`
+
+	// +kubebuilder:validation:Default=false
+	SkipQueuedBranchBuilds       bool   `json:"skipQueuedBranchBuilds,omitempty"`
+	SkipQueuedBranchBuildsFilter string `json:"skipQueuedBranchBuildsFilter,omitempty"`
+
+	// +kubebuilder:validation:Default=false
+	CancelRunningBranchBuilds bool `json:"cancelRunningBranchBuilds,omitempty"`
+
+	CancelRunningBranchBuildsFilter string   `json:"cancelRunningBranchBuildsFilter,omitempty"`
+	TeamUuids                       []string `json:"teamUUIDS,omitempty"`
+	ClusterID                       string   `json:"clusterID,omitempty"`
 }
 
 // PipelineStatus defines the observed state of Pipeline
@@ -156,13 +161,22 @@ type ProviderSettings struct {
 
 // BitbucketSettings are settings for pipelines building from Bitbucket repositories.
 type BitbucketSettings struct {
-	BuildPullRequests                       *bool   `json:"buildPullRequests,omitempty"`
-	PullRequestBranchFilterEnabled          *bool   `json:"pullRequestBranchFilterEnabled,omitempty"`
-	PullRequestBranchFilterConfiguration    *string `json:"pullRequestBranchFilterConfiguration,omitempty"`
-	SkipPullRequestBuildsForExistingCommits *bool   `json:"skipPullRequestBuildsForExistingCommits,omitempty"`
-	BuildTags                               *bool   `json:"buildTags,omitempty"`
-	PublishCommitStatus                     *bool   `json:"publishCommitStatus,omitempty"`
-	PublishCommitStatusPerStep              *bool   `json:"publishCommitStatusPerStep,omitempty"`
+	// +kubebuilder:validation:Default=true
+	BuildPullRequests *bool `json:"buildPullRequests,omitempty"`
+
+	// +kubebuilder:validation:Default=false
+	PullRequestBranchFilterEnabled       *bool   `json:"pullRequestBranchFilterEnabled,omitempty"`
+	PullRequestBranchFilterConfiguration *string `json:"pullRequestBranchFilterConfiguration,omitempty"`
+	// +kubebuilder:validation:Default=true
+	SkipPullRequestBuildsForExistingCommits *bool `json:"skipPullRequestBuildsForExistingCommits,omitempty"`
+	// +kubebuilder:validation:Default=false
+	BuildTags *bool `json:"buildTags,omitempty"`
+
+	// +kubebuilder:validation:Default=true
+	PublishCommitStatus *bool `json:"publishCommitStatus,omitempty"`
+
+	// +kubebuilder:validation:Default=false
+	PublishCommitStatusPerStep *bool `json:"publishCommitStatusPerStep,omitempty"`
 
 	// Read-only
 	Repository *string `json:"repository,omitempty"`
@@ -170,20 +184,42 @@ type BitbucketSettings struct {
 
 // GitHubSettings are settings for pipelines building from GitHub repositories.
 type GitHubSettings struct {
-	TriggerMode                             *string `json:"triggerMode,omitempty"`
-	BuildPullRequests                       *bool   `json:"buildPullRequests,omitempty"`
-	PullRequestBranchFilterEnabled          *bool   `json:"pullRequestBranchFilterEnabled,omitempty"`
-	PullRequestBranchFilterConfiguration    *string `json:"pullRequestBranchFilterConfiguration,omitempty"`
-	SkipPullRequestBuildsForExistingCommits *bool   `json:"skipPullRequestBuildsForExistingCommits,omitempty"`
-	BuildPullRequestForks                   *bool   `json:"buildPullRequestForks,omitempty"`
-	PrefixPullRequestForkBranchNames        *bool   `json:"prefixPullRequestForkBranchNames,omitempty"`
-	BuildTags                               *bool   `json:"buildTags,omitempty"`
-	PublishCommitStatus                     *bool   `json:"publishCommitStatus,omitempty"`
-	PublishCommitStatusPerStep              *bool   `json:"publishCommitStatusPerStep,omitempty"`
-	FilterEnabled                           *bool   `json:"filterEnabled,omitempty"`
-	FilterCondition                         *string `json:"filterCondition,omitempty"`
-	SeparatePullRequestStatuses             *bool   `json:"separatePullRequestStatuses,omitempty"`
-	PublishBlockedAsPending                 *bool   `json:"publishBlockedAsPending,omitempty"`
+	// +kubebuilder:validation:Default="code"
+	TriggerMode *string `json:"triggerMode,omitempty"`
+
+	// +kubebuilder:validation:Default=true
+	BuildPullRequests *bool `json:"buildPullRequests,omitempty"`
+
+	// +kubebuilder:validation:Default=false
+	PullRequestBranchFilterEnabled       *bool   `json:"pullRequestBranchFilterEnabled,omitempty"`
+	PullRequestBranchFilterConfiguration *string `json:"pullRequestBranchFilterConfiguration,omitempty"`
+	// +kubebuilder:validation:Default=true
+	SkipPullRequestBuildsForExistingCommits *bool `json:"skipPullRequestBuildsForExistingCommits,omitempty"`
+
+	// +kubebuilder:validation:Default=false
+	BuildPullRequestForks *bool `json:"buildPullRequestForks,omitempty"`
+
+	// +kubebuilder:validation:Default=true
+	PrefixPullRequestForkBranchNames *bool `json:"prefixPullRequestForkBranchNames,omitempty"`
+
+	// +kubebuilder:validation:Default=false
+	BuildTags *bool `json:"buildTags,omitempty"`
+
+	// +kubebuilder:validation:Default=true
+	PublishCommitStatus *bool `json:"publishCommitStatus,omitempty"`
+
+	// +kubebuilder:validation:Default=false
+	PublishCommitStatusPerStep *bool `json:"publishCommitStatusPerStep,omitempty"`
+
+	// +kubebuilder:validation:Default=true
+	FilterEnabled   *bool   `json:"filterEnabled,omitempty"`
+	FilterCondition *string `json:"filterCondition,omitempty"`
+
+	// +kubebuilder:validation:Default=false
+	SeparatePullRequestStatuses *bool `json:"separatePullRequestStatuses,omitempty"`
+
+	// +kubebuilder:validation:Default=false
+	PublishBlockedAsPending *bool `json:"publishBlockedAsPending,omitempty"`
 
 	// Read-only
 	Repository *string `json:"repository,omitempty"`
@@ -191,13 +227,26 @@ type GitHubSettings struct {
 
 // GitHubEnterpriseSettings are settings for pipelines building from GitHub Enterprise repositories.
 type GitHubEnterpriseSettings struct {
-	BuildPullRequests                       *bool   `json:"buildPullRequests,omitempty"`
-	PullRequestBranchFilterEnabled          *bool   `json:"pullRequestBranchFilterEnabled,omitempty"`
-	PullRequestBranchFilterConfiguration    *string `json:"pullRequestBranchFilterConfiguration,omitempty"`
-	SkipPullRequestBuildsForExistingCommits *bool   `json:"skipPullRequestBuildsForExistingCommits,omitempty"`
-	BuildTags                               *bool   `json:"buildTags,omitempty"`
-	PublishCommitStatus                     *bool   `json:"publishCommitStatus,omitempty"`
-	PublishCommitStatusPerStep              *bool   `json:"publishCommitStatusPerStep,omitempty"`
+	// +kubebuilder:validation:Default=true
+	BuildPullRequests *bool `json:"buildPullRequests,omitempty"`
+
+	// +kubebuilder:validation:Default=false
+	PullRequestBranchFilterEnabled *bool `json:"pullRequestBranchFilterEnabled,omitempty"`
+
+	// +kubebuilder:validation:Default=true
+	PullRequestBranchFilterConfiguration *string `json:"pullRequestBranchFilterConfiguration,omitempty"`
+
+	// +kubebuilder:validation:Default=true
+	SkipPullRequestBuildsForExistingCommits *bool `json:"skipPullRequestBuildsForExistingCommits,omitempty"`
+
+	// +kubebuilder:validation:Default=false
+	BuildTags *bool `json:"buildTags,omitempty"`
+
+	// +kubebuilder:validation:Default=true
+	PublishCommitStatus *bool `json:"publishCommitStatus,omitempty"`
+
+	// +kubebuilder:validation:Default=false
+	PublishCommitStatusPerStep *bool `json:"publishCommitStatusPerStep,omitempty"`
 
 	// Read-only
 	Repository *string `json:"repository,omitempty"`
