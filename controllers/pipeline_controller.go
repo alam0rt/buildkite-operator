@@ -142,6 +142,32 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			PublishBlockedAsPending:                 pipeline.Spec.ProviderSettings.GitHubSettings.PublishBlockedAsPending,
 		}
 		resp.Provider.Settings = s
+	case "github_enterprise":
+		s := &buildkite.GitHubEnterpriseSettings{
+			BuildPullRequests:                       pipeline.Spec.ProviderSettings.GitHubEnterpriseSettings.BuildPullRequests,
+			PullRequestBranchFilterEnabled:          pipeline.Spec.ProviderSettings.GitHubEnterpriseSettings.PullRequestBranchFilterEnabled,
+			PullRequestBranchFilterConfiguration:    pipeline.Spec.ProviderSettings.GitHubEnterpriseSettings.PullRequestBranchFilterConfiguration,
+			SkipPullRequestBuildsForExistingCommits: pipeline.Spec.ProviderSettings.GitHubEnterpriseSettings.SkipPullRequestBuildsForExistingCommits,
+			BuildTags:                               pipeline.Spec.ProviderSettings.GitHubEnterpriseSettings.BuildTags,
+			PublishCommitStatus:                     pipeline.Spec.ProviderSettings.GitHubEnterpriseSettings.PublishCommitStatus,
+			PublishCommitStatusPerStep:              pipeline.Spec.ProviderSettings.GitHubEnterpriseSettings.PublishCommitStatusPerStep,
+		}
+		resp.Provider.Settings = s
+	case "gitlab":
+		s := &buildkite.GitLabSettings{}
+		resp.Provider.Settings = s
+	case "bitbucket":
+		s := &buildkite.BitbucketSettings{
+			BuildPullRequests:                       pipeline.Spec.ProviderSettings.BitbucketSettings.BuildPullRequests,
+			PullRequestBranchFilterEnabled:          pipeline.Spec.ProviderSettings.BitbucketSettings.PullRequestBranchFilterEnabled,
+			PullRequestBranchFilterConfiguration:    pipeline.Spec.ProviderSettings.BitbucketSettings.PullRequestBranchFilterConfiguration,
+			SkipPullRequestBuildsForExistingCommits: pipeline.Spec.ProviderSettings.BitbucketSettings.SkipPullRequestBuildsForExistingCommits,
+			BuildTags:                               pipeline.Spec.ProviderSettings.BitbucketSettings.BuildTags,
+			PublishCommitStatus:                     pipeline.Spec.ProviderSettings.BitbucketSettings.PublishCommitStatus,
+			PublishCommitStatusPerStep:              pipeline.Spec.ProviderSettings.BitbucketSettings.PublishCommitStatusPerStep,
+		}
+		resp.Provider.Settings = s
+
 	}
 
 	resp.Name = &nameSlug // the name must equal the slug and vice versa
