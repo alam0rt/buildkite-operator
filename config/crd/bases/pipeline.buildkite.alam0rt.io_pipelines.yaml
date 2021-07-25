@@ -20,10 +20,10 @@ spec:
     - jsonPath: .spec.organization
       name: Organization
       type: string
-    - jsonPath: .status.running_builds_count
+    - jsonPath: .status.runningBuildsCount
       name: RunningBuilds
       type: integer
-    - jsonPath: .status.running_jobs_count
+    - jsonPath: .status.runningJobsCount
       name: RunningJobs
       type: integer
     name: v1alpha1
@@ -49,18 +49,18 @@ spec:
               accessTokenRef:
                 description: Required for authentication
                 type: string
-              branch_configuration:
+              branchConfiguration:
                 type: string
-              cancel_running_branch_builds:
+              cancelRunningBranchBuilds:
                 type: boolean
-              cancel_running_branch_builds_filter:
+              cancelRunningBranchBuildsFilter:
                 type: string
-              cluster_id:
+              clusterID:
                 type: string
               configuration:
                 description: Only support YAML pipelines https://buildkite.com/docs/apis/rest-api/pipelines#create-a-yaml-pipeline
                 type: string
-              default_branch:
+              defaultBranch:
                 description: Optional fields
                 type: string
               description:
@@ -72,7 +72,7 @@ spec:
               organization:
                 description: Steps for the pipeline to take https://buildkite.com/docs/pipelines/defining-steps#step-defaults
                 type: string
-              provider_settings:
+              providerSettings:
                 description: ProviderSettings represents a source code provider. It
                   is read-only, but settings may be written using Pipeline.ProviderSettings.
                 properties:
@@ -167,11 +167,11 @@ spec:
                 type: object
               repository:
                 type: string
-              skip_queued_branch_builds:
+              skipQueuedBranchBuilds:
                 type: boolean
-              skip_queued_branch_builds_filter:
+              skipQueuedBranchBuildsFilter:
                 type: string
-              team_uuids:
+              teamUUIDS:
                 items:
                   type: string
                 type: array
@@ -183,14 +183,16 @@ spec:
           status:
             description: PipelineStatus defines the observed state of Pipeline
             properties:
-              archived_at:
+              URL:
+                type: string
+              archivedAt:
                 format: date-time
                 type: string
-              badge_url:
+              badgeURL:
                 type: string
-              builds_url:
+              buildsURL:
                 type: string
-              created_at:
+              createdAt:
                 format: date-time
                 type: string
               provider:
@@ -198,28 +200,26 @@ spec:
                 properties:
                   ID:
                     type: string
-                  webhook_url:
+                  webhookURL:
                     type: string
                 required:
                 - ID
-                - webhook_url
+                - webhookURL
                 type: object
-              running_builds_count:
+              runningBuildsCount:
                 type: integer
-              running_jobs_count:
+              runningJobsCount:
                 type: integer
-              scheduled_builds_count:
+              scheduledBuildsCount:
                 type: integer
-              scheduled_jobs_count:
+              scheduledJobsCount:
                 type: integer
               slug:
                 description: Last observed state of the build job
                 type: string
-              url:
-                type: string
-              waiting_jobs_count:
+              waitingJobsCount:
                 type: integer
-              web_url:
+              webURL:
                 type: string
             type: object
         type: object
