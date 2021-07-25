@@ -76,87 +76,87 @@ spec:
                 description: ProviderSettings represents a source code provider. It
                   is read-only, but settings may be written using Pipeline.ProviderSettings.
                 properties:
-                  bitbucket_settings:
+                  bitbucketSettings:
                     description: BitbucketSettings are settings for pipelines building
                       from Bitbucket repositories.
                     properties:
-                      build_pull_requests:
+                      buildPullRequests:
                         type: boolean
-                      build_tags:
+                      buildTags:
                         type: boolean
-                      publish_commit_status:
+                      publishCommitStatus:
                         type: boolean
-                      publish_commit_status_per_step:
+                      publishCommitStatusPerStep:
                         type: boolean
-                      pull_request_branch_filter_configuration:
+                      pullRequestBranchFilterConfiguration:
                         type: string
-                      pull_request_branch_filter_enabled:
+                      pullRequestBranchFilterEnabled:
                         type: boolean
                       repository:
                         description: Read-only
                         type: string
-                      skip_pull_request_builds_for_existing_commits:
+                      skipPullRequestBuildsForExistingCommits:
                         type: boolean
                     type: object
-                  github_enterprise_settings:
+                  githubEnterpriseSettings:
                     description: GitHubEnterpriseSettings are settings for pipelines
                       building from GitHub Enterprise repositories.
                     properties:
-                      build_pull_requests:
+                      buildPullRequests:
                         type: boolean
-                      build_tags:
+                      buildTags:
                         type: boolean
-                      publish_commit_status:
+                      publishCommitStatus:
                         type: boolean
-                      publish_commit_status_per_step:
+                      publishCommitStatusPerStep:
                         type: boolean
-                      pull_request_branch_filter_configuration:
+                      pullRequestBranchFilterConfiguration:
                         type: string
-                      pull_request_branch_filter_enabled:
+                      pullRequestBranchFilterEnabled:
                         type: boolean
                       repository:
                         description: Read-only
                         type: string
-                      skip_pull_request_builds_for_existing_commits:
+                      skipPullRequestBuildsForExistingCommits:
                         type: boolean
                     type: object
-                  github_settings:
+                  githubSettings:
                     description: GitHubSettings are settings for pipelines building
                       from GitHub repositories.
                     properties:
-                      build_pull_request_forks:
+                      buildPullRequestForks:
                         type: boolean
-                      build_pull_requests:
+                      buildPullRequests:
                         type: boolean
-                      build_tags:
+                      buildTags:
                         type: boolean
-                      filter_condition:
+                      filterCondition:
                         type: string
-                      filter_enabled:
+                      filterEnabled:
                         type: boolean
-                      prefix_pull_request_fork_branch_names:
+                      prefixPullRequestForkBranchNames:
                         type: boolean
-                      publish_blocked_as_pending:
+                      publishBlockedAsPending:
                         type: boolean
-                      publish_commit_status:
+                      publishCommitStatus:
                         type: boolean
-                      publish_commit_status_per_step:
+                      publishCommitStatusPerStep:
                         type: boolean
-                      pull_request_branch_filter_configuration:
+                      pullRequestBranchFilterConfiguration:
                         type: string
-                      pull_request_branch_filter_enabled:
+                      pullRequestBranchFilterEnabled:
                         type: boolean
                       repository:
                         description: Read-only
                         type: string
-                      separate_pull_request_statuses:
+                      separatePullRequestStatuses:
                         type: boolean
-                      skip_pull_request_builds_for_existing_commits:
+                      skipPullRequestBuildsForExistingCommits:
                         type: boolean
-                      trigger_mode:
+                      triggerMode:
                         type: string
                     type: object
-                  gitlab_settings:
+                  gitlabSettings:
                     description: GitLabSettings are settings for pipelines building
                       from GitLab repositories.
                     properties:
