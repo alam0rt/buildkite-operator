@@ -123,6 +123,53 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	}
 
+	switch id := resp.Provider.ID; id {
+	case "github":
+		s := &buildkite.GitHubSettings{
+			TriggerMode:                             pipeline.Spec.ProviderSettings.GitHubSettings.TriggerMode,
+			BuildPullRequests:                       pipeline.Spec.ProviderSettings.GitHubSettings.BuildPullRequests,
+			PullRequestBranchFilterEnabled:          pipeline.Spec.ProviderSettings.GitHubSettings.PullRequestBranchFilterEnabled,
+			PullRequestBranchFilterConfiguration:    pipeline.Spec.ProviderSettings.GitHubSettings.PullRequestBranchFilterConfiguration,
+			SkipPullRequestBuildsForExistingCommits: pipeline.Spec.ProviderSettings.GitHubSettings.SkipPullRequestBuildsForExistingCommits,
+			BuildPullRequestForks:                   pipeline.Spec.ProviderSettings.GitHubSettings.BuildPullRequestForks,
+			PrefixPullRequestForkBranchNames:        pipeline.Spec.ProviderSettings.GitHubSettings.PrefixPullRequestForkBranchNames,
+			BuildTags:                               pipeline.Spec.ProviderSettings.GitHubSettings.BuildTags,
+			PublishCommitStatus:                     pipeline.Spec.ProviderSettings.GitHubSettings.PublishCommitStatus,
+			PublishCommitStatusPerStep:              pipeline.Spec.ProviderSettings.GitHubSettings.PublishCommitStatusPerStep,
+			FilterEnabled:                           pipeline.Spec.ProviderSettings.GitHubSettings.FilterEnabled,
+			FilterCondition:                         pipeline.Spec.ProviderSettings.GitHubSettings.FilterCondition,
+			SeparatePullRequestStatuses:             pipeline.Spec.ProviderSettings.GitHubSettings.SeparatePullRequestStatuses,
+			PublishBlockedAsPending:                 pipeline.Spec.ProviderSettings.GitHubSettings.PublishBlockedAsPending,
+		}
+		resp.Provider.Settings = s
+	case "github_enterprise":
+		s := &buildkite.GitHubEnterpriseSettings{
+			BuildPullRequests:                       pipeline.Spec.ProviderSettings.GitHubEnterpriseSettings.BuildPullRequests,
+			PullRequestBranchFilterEnabled:          pipeline.Spec.ProviderSettings.GitHubEnterpriseSettings.PullRequestBranchFilterEnabled,
+			PullRequestBranchFilterConfiguration:    pipeline.Spec.ProviderSettings.GitHubEnterpriseSettings.PullRequestBranchFilterConfiguration,
+			SkipPullRequestBuildsForExistingCommits: pipeline.Spec.ProviderSettings.GitHubEnterpriseSettings.SkipPullRequestBuildsForExistingCommits,
+			BuildTags:                               pipeline.Spec.ProviderSettings.GitHubEnterpriseSettings.BuildTags,
+			PublishCommitStatus:                     pipeline.Spec.ProviderSettings.GitHubEnterpriseSettings.PublishCommitStatus,
+			PublishCommitStatusPerStep:              pipeline.Spec.ProviderSettings.GitHubEnterpriseSettings.PublishCommitStatusPerStep,
+		}
+		resp.Provider.Settings = s
+	case "gitlab":
+		s := &buildkite.GitLabSettings{}
+		resp.Provider.Settings = s
+	case "bitbucket":
+		s := &buildkite.BitbucketSettings{
+			BuildPullRequests:                       pipeline.Spec.ProviderSettings.BitbucketSettings.BuildPullRequests,
+			PullRequestBranchFilterEnabled:          pipeline.Spec.ProviderSettings.BitbucketSettings.PullRequestBranchFilterEnabled,
+			PullRequestBranchFilterConfiguration:    pipeline.Spec.ProviderSettings.BitbucketSettings.PullRequestBranchFilterConfiguration,
+			SkipPullRequestBuildsForExistingCommits: pipeline.Spec.ProviderSettings.BitbucketSettings.SkipPullRequestBuildsForExistingCommits,
+			BuildTags:                               pipeline.Spec.ProviderSettings.BitbucketSettings.BuildTags,
+			PublishCommitStatus:                     pipeline.Spec.ProviderSettings.BitbucketSettings.PublishCommitStatus,
+			PublishCommitStatusPerStep:              pipeline.Spec.ProviderSettings.BitbucketSettings.PublishCommitStatusPerStep,
+		}
+		resp.Provider.Settings = s
+
+	}
+
 	resp.Name = &nameSlug // the name must equal the slug and vice versa
 	resp.BranchConfiguration = &pipeline.Spec.BranchConfiguration
 	resp.CancelRunningBranchBuilds = &pipeline.Spec.CancelRunningBranchBuilds
@@ -135,8 +182,6 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	// TODO: implement Visibility when its in go-buildkite
 	// resp.Visibility = &pipeline.Spec.Visibility
 
-	// TODO: implement ProviderSettings
-
 	err = p.Update(&resp)
 	if err != nil {
 		log.Log.Error(err, "there was a problem updating the pipeline")
@@ -146,7 +191,7 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	pipeline.Status = v1alpha1.PipelineStatus{
 		Slug: resp.Slug,
 		Provider: &pipelinev1alpha1.Provider{
-			ID:         resp.Provider.ID,
+			ID:         &resp.Provider.ID,
 			WebhookURL: resp.Provider.WebhookURL,
 		},
 		URL:       resp.URL,

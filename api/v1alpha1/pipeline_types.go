@@ -35,41 +35,38 @@ type PipelineSpec struct {
 	Configuration string `json:"configuration,omitempty"`
 
 	// Optional fields
-	DefaultBranch                   string            `json:"default_branch,omitempty"`
+	DefaultBranch                   string            `json:"defaultBranch,omitempty"`
 	Description                     string            `json:"description,omitempty"`
 	Env                             map[string]string `json:"env,omitempty"`
-	ProviderSettings                ProviderSettings  `json:"provider_settings,omitempty"`
-	BranchConfiguration             string            `json:"branch_configuration,omitempty"`
-	SkipQueuedBranchBuilds          bool              `json:"skip_queued_branch_builds,omitempty"`
-	SkipQueuedBranchBuildsFilter    string            `json:"skip_queued_branch_builds_filter,omitempty"`
-	CancelRunningBranchBuilds       bool              `json:"cancel_running_branch_builds,omitempty"`
-	CancelRunningBranchBuildsFilter string            `json:"cancel_running_branch_builds_filter,omitempty"`
-	TeamUuids                       []string          `json:"team_uuids,omitempty"`
-	ClusterID                       string            `json:"cluster_id,omitempty"`
+	ProviderSettings                ProviderSettings  `json:"providerSettings,omitempty"`
+	BranchConfiguration             string            `json:"branchConfiguration,omitempty"`
+	SkipQueuedBranchBuilds          bool              `json:"skipQueuedBranchBuilds,omitempty"`
+	SkipQueuedBranchBuildsFilter    string            `json:"skipQueuedBranchBuildsFilter,omitempty"`
+	CancelRunningBranchBuilds       bool              `json:"cancelRunningBranchBuilds,omitempty"`
+	CancelRunningBranchBuildsFilter string            `json:"cancelRunningBranchBuildsFilter,omitempty"`
+	TeamUuids                       []string          `json:"teamUUIDS,omitempty"`
+	ClusterID                       string            `json:"clusterID,omitempty"`
 }
 
 // PipelineStatus defines the observed state of Pipeline
 type PipelineStatus struct {
 	// Last observed state of the build job
 	Slug       *string      `json:"slug,omitempty"`
-	URL        *string      `json:"url,omitempty"`
-	WebURL     *string      `json:"web_url,omitempty"`
-	BuildsURL  *string      `json:"builds_url,omitempty"`
-	BadgeURL   *string      `json:"badge_url,omitempty"`
-	CreatedAt  *metav1.Time `json:"created_at,omitempty"`
-	ArchivedAt *metav1.Time `json:"archived_at,omitempty"`
+	URL        *string      `json:"URL,omitempty"`
+	WebURL     *string      `json:"webURL,omitempty"`
+	BuildsURL  *string      `json:"buildsURL,omitempty"`
+	BadgeURL   *string      `json:"badgeURL,omitempty"`
+	CreatedAt  *metav1.Time `json:"createdAt,omitempty"`
+	ArchivedAt *metav1.Time `json:"archivedAt,omitempty"`
 
-	ScheduledBuildsCount *int `json:"scheduled_builds_count,omitempty"`
-	RunningBuildsCount   *int `json:"running_builds_count,omitempty"`
-	ScheduledJobsCount   *int `json:"scheduled_jobs_count,omitempty"`
-	RunningJobsCount     *int `json:"running_jobs_count,omitempty"`
-	WaitingJobsCount     *int `json:"waiting_jobs_count,omitempty"`
+	ScheduledBuildsCount *int `json:"scheduledBuildsCount,omitempty"`
+	RunningBuildsCount   *int `json:"runningBuildsCount,omitempty"`
+	ScheduledJobsCount   *int `json:"scheduledJobsCount,omitempty"`
+	RunningJobsCount     *int `json:"runningJobsCount,omitempty"`
+	WaitingJobsCount     *int `json:"waitingJobsCount,omitempty"`
 
 	// the provider of sources
-	Provider *Provider `json:"provider,omitempty" yaml:"provider,omitempty"`
-
-	// build state
-	//	BuildState BuildState `json:"build"`
+	Provider *Provider `json:"provider,omitempty"`
 }
 
 // BuildState describes the state of the overall pipeline.
@@ -113,8 +110,8 @@ const (
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="Organization",type=string,JSONPath=`.spec.organization`
-//+kubebuilder:printcolumn:name="RunningBuilds",type=integer,JSONPath=`.status.running_builds_count`
-//+kubebuilder:printcolumn:name="RunningJobs",type=integer,JSONPath=`.status.running_jobs_count`
+//+kubebuilder:printcolumn:name="RunningBuilds",type=integer,JSONPath=`.status.runningBuildsCount`
+//+kubebuilder:printcolumn:name="RunningJobs",type=integer,JSONPath=`.status.runningJobsCount`
 
 // Pipeline is the Schema for the pipelines API
 type Pipeline struct {
@@ -134,29 +131,38 @@ type PipelineList struct {
 	Items           []Pipeline `json:"items"`
 }
 
-// Provider represents a source code provider. It is read-only, but settings may be written using Pipeline.ProviderSettings.
+// +kubebuilder:validation:Enum=github;github_enterprise;bitbucket;gitlab
+type ProviderID string
+
+const (
+	GitHubProvider           ProviderID = "github"
+	GitHubEnterpriseProvider ProviderID = "github_enterprise"
+	BitbucketProvider        ProviderID = "bitbucket"
+	GitLabProvider           ProviderID = "gitlab"
+)
+
 type Provider struct {
-	ID         string  `json:"id"`
-	WebhookURL *string `json:"webhook_url"`
+	ID         *string `json:"ID"`
+	WebhookURL *string `json:"webhookURL"`
 }
 
-// ProviderSettings are settings for the pipeline provider.
+// ProviderSettings represents a source code provider. It is read-only, but settings may be written using Pipeline.ProviderSettings.
 type ProviderSettings struct {
-	GitHubSettings           GitHubSettings           `json:"github_settings,omitempty"`
-	GitHubEnterpriseSettings GitHubEnterpriseSettings `json:"github_enterprise_settings,omitempty"`
-	BitbucketSettings        BitbucketSettings        `json:"bitbucket_settings,omitempty"`
-	GitLabSettings           GitLabSettings           `json:"gitlab_settings,omitempty"`
+	GitHubSettings           GitHubSettings           `json:"githubSettings,omitempty"`
+	GitHubEnterpriseSettings GitHubEnterpriseSettings `json:"githubEnterpriseSettings,omitempty"`
+	BitbucketSettings        BitbucketSettings        `json:"bitbucketSettings,omitempty"`
+	GitLabSettings           GitLabSettings           `json:"gitlabSettings,omitempty"`
 }
 
 // BitbucketSettings are settings for pipelines building from Bitbucket repositories.
 type BitbucketSettings struct {
-	BuildPullRequests                       *bool   `json:"build_pull_requests,omitempty"`
-	PullRequestBranchFilterEnabled          *bool   `json:"pull_request_branch_filter_enabled,omitempty"`
-	PullRequestBranchFilterConfiguration    *string `json:"pull_request_branch_filter_configuration,omitempty"`
-	SkipPullRequestBuildsForExistingCommits *bool   `json:"skip_pull_request_builds_for_existing_commits,omitempty"`
-	BuildTags                               *bool   `json:"build_tags,omitempty"`
-	PublishCommitStatus                     *bool   `json:"publish_commit_status,omitempty"`
-	PublishCommitStatusPerStep              *bool   `json:"publish_commit_status_per_step,omitempty"`
+	BuildPullRequests                       *bool   `json:"buildPullRequests,omitempty"`
+	PullRequestBranchFilterEnabled          *bool   `json:"pullRequestBranchFilterEnabled,omitempty"`
+	PullRequestBranchFilterConfiguration    *string `json:"pullRequestBranchFilterConfiguration,omitempty"`
+	SkipPullRequestBuildsForExistingCommits *bool   `json:"skipPullRequestBuildsForExistingCommits,omitempty"`
+	BuildTags                               *bool   `json:"buildTags,omitempty"`
+	PublishCommitStatus                     *bool   `json:"publishCommitStatus,omitempty"`
+	PublishCommitStatusPerStep              *bool   `json:"publishCommitStatusPerStep,omitempty"`
 
 	// Read-only
 	Repository *string `json:"repository,omitempty"`
@@ -164,20 +170,20 @@ type BitbucketSettings struct {
 
 // GitHubSettings are settings for pipelines building from GitHub repositories.
 type GitHubSettings struct {
-	TriggerMode                             *string `json:"trigger_mode,omitempty"`
-	BuildPullRequests                       *bool   `json:"build_pull_requests,omitempty"`
-	PullRequestBranchFilterEnabled          *bool   `json:"pull_request_branch_filter_enabled,omitempty"`
-	PullRequestBranchFilterConfiguration    *string `json:"pull_request_branch_filter_configuration,omitempty"`
-	SkipPullRequestBuildsForExistingCommits *bool   `json:"skip_pull_request_builds_for_existing_commits,omitempty"`
-	BuildPullRequestForks                   *bool   `json:"build_pull_request_forks,omitempty"`
-	PrefixPullRequestForkBranchNames        *bool   `json:"prefix_pull_request_fork_branch_names,omitempty"`
-	BuildTags                               *bool   `json:"build_tags,omitempty"`
-	PublishCommitStatus                     *bool   `json:"publish_commit_status,omitempty"`
-	PublishCommitStatusPerStep              *bool   `json:"publish_commit_status_per_step,omitempty"`
-	FilterEnabled                           *bool   `json:"filter_enabled,omitempty"`
-	FilterCondition                         *string `json:"filter_condition,omitempty"`
-	SeparatePullRequestStatuses             *bool   `json:"separate_pull_request_statuses,omitempty"`
-	PublishBlockedAsPending                 *bool   `json:"publish_blocked_as_pending,omitempty"`
+	TriggerMode                             *string `json:"triggerMode,omitempty"`
+	BuildPullRequests                       *bool   `json:"buildPullRequests,omitempty"`
+	PullRequestBranchFilterEnabled          *bool   `json:"pullRequestBranchFilterEnabled,omitempty"`
+	PullRequestBranchFilterConfiguration    *string `json:"pullRequestBranchFilterConfiguration,omitempty"`
+	SkipPullRequestBuildsForExistingCommits *bool   `json:"skipPullRequestBuildsForExistingCommits,omitempty"`
+	BuildPullRequestForks                   *bool   `json:"buildPullRequestForks,omitempty"`
+	PrefixPullRequestForkBranchNames        *bool   `json:"prefixPullRequestForkBranchNames,omitempty"`
+	BuildTags                               *bool   `json:"buildTags,omitempty"`
+	PublishCommitStatus                     *bool   `json:"publishCommitStatus,omitempty"`
+	PublishCommitStatusPerStep              *bool   `json:"publishCommitStatusPerStep,omitempty"`
+	FilterEnabled                           *bool   `json:"filterEnabled,omitempty"`
+	FilterCondition                         *string `json:"filterCondition,omitempty"`
+	SeparatePullRequestStatuses             *bool   `json:"separatePullRequestStatuses,omitempty"`
+	PublishBlockedAsPending                 *bool   `json:"publishBlockedAsPending,omitempty"`
 
 	// Read-only
 	Repository *string `json:"repository,omitempty"`
@@ -185,13 +191,13 @@ type GitHubSettings struct {
 
 // GitHubEnterpriseSettings are settings for pipelines building from GitHub Enterprise repositories.
 type GitHubEnterpriseSettings struct {
-	BuildPullRequests                       *bool   `json:"build_pull_requests,omitempty"`
-	PullRequestBranchFilterEnabled          *bool   `json:"pull_request_branch_filter_enabled,omitempty"`
-	PullRequestBranchFilterConfiguration    *string `json:"pull_request_branch_filter_configuration,omitempty"`
-	SkipPullRequestBuildsForExistingCommits *bool   `json:"skip_pull_request_builds_for_existing_commits,omitempty"`
-	BuildTags                               *bool   `json:"build_tags,omitempty"`
-	PublishCommitStatus                     *bool   `json:"publish_commit_status,omitempty"`
-	PublishCommitStatusPerStep              *bool   `json:"publish_commit_status_per_step,omitempty"`
+	BuildPullRequests                       *bool   `json:"buildPullRequests,omitempty"`
+	PullRequestBranchFilterEnabled          *bool   `json:"pullRequestBranchFilterEnabled,omitempty"`
+	PullRequestBranchFilterConfiguration    *string `json:"pullRequestBranchFilterConfiguration,omitempty"`
+	SkipPullRequestBuildsForExistingCommits *bool   `json:"skipPullRequestBuildsForExistingCommits,omitempty"`
+	BuildTags                               *bool   `json:"buildTags,omitempty"`
+	PublishCommitStatus                     *bool   `json:"publishCommitStatus,omitempty"`
+	PublishCommitStatusPerStep              *bool   `json:"publishCommitStatusPerStep,omitempty"`
 
 	// Read-only
 	Repository *string `json:"repository,omitempty"`
