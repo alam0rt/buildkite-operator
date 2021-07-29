@@ -76,11 +76,10 @@ func (p *buildkitePipeline) Create(pipelineInput *buildkite.CreatePipeline) erro
 func (p *buildkitePipeline) Exists() (bool, error) {
 	_, resp, err := p.client.Pipelines.Get(p.organization, p.nameSlug)
 	if err != nil {
+		if resp.StatusCode == 404 {
+			return false, nil
+		}
 		return false, err
-	}
-
-	if resp.Response.StatusCode == 404 {
-		return false, nil
 	}
 
 	if resp.Response.StatusCode == 200 {

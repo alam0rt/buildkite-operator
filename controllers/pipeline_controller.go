@@ -59,13 +59,6 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
-	// check that supplied access token has the correct permissions
-	for _, scope := range accessTokenResource.Status.Scopes {
-		if scope == pipelinev1alpha1.WritePipelinesScope {
-			log.Log.Info("provided token has write pipeline permissions")
-		}
-	}
-
 	apiToken := accessTokenResource.Status.Token
 	// check that the remote pipeline exists
 	var resp buildkite.Pipeline
@@ -81,6 +74,11 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	exists, err := p.Exists()
+	if err != nil {
+		log.Log.Error(err, "there was a problem determining if the pipeline exists")
+		return ctrl.Result{}, err
+	}
+
 	if exists == false {
 		log.Log.Info("could not find pipeline remotely, a pipeline will be created")
 		// if we can't retrieve the pipeline we assume it may not exist yet
@@ -94,33 +92,29 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			log.Log.Error(err, "there was an exception creating the pipeline")
 			return ctrl.Result{}, err
 		}
+
 		log.Log.Info("successfully created pipeline")
+	}
 
-	} else if exists {
-		resp, err = p.Get()
-		if err != nil {
-			log.Log.Error(err, "there was a problem retrieving the pipeline")
-			return ctrl.Result{}, err
-		}
-
-		pipeline.Status.Slug = resp.Slug
-
-		if nameSlug != *resp.Name {
-			log.Log.Info("remote pipeline was found but does not match expected name - will update to make it match")
-			resp.Name = &nameSlug
-		}
-
-		if nameSlug != *resp.Slug {
-			// this check is just to confirm the slug used to retrieve the pipeline matches said pipelines slug
-			// which it always should...
-			err = errors.New("provided slug does not match remote slug and should never occur")
-			log.Log.Error(err, "something is very wrong")
-			return ctrl.Result{}, err
-		}
-	} else if err != nil {
-		log.Log.Error(err, "there was a problem creating the pipeline")
+	resp, err = p.Get()
+	if err != nil {
+		log.Log.Error(err, "there was a problem retrieving the pipeline")
 		return ctrl.Result{}, err
+	}
 
+	pipeline.Status.Slug = resp.Slug
+
+	if nameSlug != *resp.Name {
+		log.Log.Info("remote pipeline was found but does not match expected name - will update to make it match")
+		resp.Name = &nameSlug
+	}
+
+	if nameSlug != *resp.Slug {
+		// this check is just to confirm the slug used to retrieve the pipeline matches said pipelines slug
+		// which it always should...
+		err = errors.New("provided slug does not match remote slug and should never occur")
+		log.Log.Error(err, "something is very wrong")
+		return ctrl.Result{}, err
 	}
 
 	switch id := resp.Provider.ID; id {
@@ -212,7 +206,7 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
-	time.Sleep(time.Duration(5) * time.Second)
+	time.Sleep(time.Duration(10) * time.Second)
 
 	return ctrl.Result{}, nil
 }

@@ -105,13 +105,13 @@ func (r *AccessTokenReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	accessToken.Status.LastTimeAuthenticated = time.Now().String()
 
-	// rate limiting
-	time.Sleep(time.Duration(5) * time.Second)
-
 	if err := r.Status().Update(ctx, &accessToken); err != nil {
 		log.Log.Error(err, "unable to update AccessToken status")
 		return ctrl.Result{}, err
 	}
+
+	// rate limiting
+	time.Sleep(time.Duration(10) * time.Second)
 
 	return ctrl.Result{}, nil
 }
