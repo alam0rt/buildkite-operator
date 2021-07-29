@@ -4,19 +4,22 @@ set -eou pipefail
 
 
 warp() {
-  pushd .
-  git rev-parse --show-toplevel
-  trap 'popd' INT EXIT
+  pushd . &>/dev/null
+  cd "$1"
+  trap 'popd &>/dev/null' INT EXIT
 }
 
+base_git_dir="$(git rev-parse --show-toplevel)"
 repo="$(git remote get-url origin)"
 name="$(basename $(pwd))"
 org="${1?please provide an organization name}"
 token="${2?please provide an accesstoken name}"
 
-warp
 
-mkdir -p .buildkite
+warp "$base_git_dir"
+
+mkdir -p .buildkite &>/dev/null
+
 cat <<'EOF' > .buildkite/pipeline.yaml
 steps:
   - label: ":hammer: Example Script"
@@ -34,6 +37,8 @@ metadata:
 spec:
   organization: ${org}
   accessTokenRef: accesstoken-sample
-  step:
-    - command: "buildkite-agent pipeline upload .buildkite/pipeline.yaml"
+  repository: ${repo}
+  configuration: |
+    steps:
+      - command: buildkite-agent pipeline upload .buildkite/pipeline.yaml
 EOF
